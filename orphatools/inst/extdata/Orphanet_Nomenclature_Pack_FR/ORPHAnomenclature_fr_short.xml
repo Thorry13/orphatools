@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<JDBOR date="2021-07-02 08:30:26" version="1.3.7 / 4.1.7 [2020-12-03] (orientdb version)" copyright="Orphanet (c) 2021" dbserver="jdbc:sybase:Tds:canard.orpha.net:2020">
+  <Availability> 
+    <Licence>
+      <FullName lang="en">Creative Commons Attribution 4.0 International</FullName>
+      <ShortIdentifier>CC-BY-4.0</ShortIdentifier>
+      <LegalCode>https://creativecommons.org/licenses/by/4.0/legalcode</LegalCode>
+    </Licence>
+  </Availability>
+  <DisorderList count="10563">
+    <Disorder id="17601">
+      <OrphaCode>166024</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=166024</ExpertLink>
+      <Name lang="fr">Dysplasie épiphysaire multiple type Al-Gazali</Name>
+      <FlagValue>1</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="1">
+        <Synonym lang="fr">Syndrome de dysplasie épiphysaire multiple-macrocéphalie-faciès particulier</Synonym>
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="1">
+        <SummaryInformation id="63386" lang="fr">
+          <TextSectionList count="1">
+            <TextSection id="84264" lang="fr">
+              <TextSectionType id="16907">
+                <Name lang="fr">Définition</Name>
+              </TextSectionType>
+              <Contents>La dysplasie épiphysaire multiple type Al-Gazali est une dysplasie squelettique caractérisée par une dysplasie épiphysaire multiple (voir ce terme), une macrocéphalie et une dysmorphie faciale.</Contents>
+            </TextSection>
+          </TextSectionList>
+        </SummaryInformation>
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>166024</OrphaCode>
+            <PreferredTerm lang="fr">Dysplasie épiphysaire multiple type Al-Gazali</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    <Disorder id="2">
+      <OrphaCode>58</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=58</ExpertLink>
+      <Name lang="fr">Maladie d'Alexander</Name>
+      <FlagValue>1</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="1">
+        <Synonym lang="fr">AxD</Synonym>
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="1">
+        <SummaryInformation id="91969" lang="fr">
+          <TextSectionList count="1">
+            <TextSection id="111882" lang="fr">
+              <TextSectionType id="16907">
+                <Name lang="fr">Définition</Name>
+              </TextSectionType>
+              <Contents>La maladie d'Alexander (AxD) est une maladie neurodégénérative rare affectant les astrocytes, comprenant deux formes cliniques, l'AxD type I et l'AxD type II (voir ces termes), caractérisée par différents degrés de macrocéphalie, spasticité, ataxie et convulsions, et conduisant à une régression psychomotrice et au décès.</Contents>
+            </TextSection>
+          </TextSectionList>
+        </SummaryInformation>
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>58</OrphaCode>
+            <PreferredTerm lang="fr">Maladie d'Alexander</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    <Disorder id="17603">
+      <OrphaCode>166032</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=166032</ExpertLink>
+      <Name lang="fr">Dysplasie épiphysaire multiple avec miniépiphyse</Name>
+      <FlagValue>1</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="0">
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="1">
+        <SummaryInformation id="112355" lang="fr">
+          <TextSectionList count="1">
+            <TextSection id="141886" lang="fr">
+              <TextSectionType id="16907">
+                <Name lang="fr">Définition</Name>
+              </TextSectionType>
+              <Contents>Une dysplasie osseuse primaire rare caractérisée par des centres d'ossification secondaire étonnamment petits (mini-épiphyses) dans toutes ou seulement certaines articulations, conduisant à une dysplasie osseuse sévère des têtes fémorales proximales. Une petite taille, une lordose lombaire accrue, des genu varum et une hyperlaxité articulaire généralisée ont aussi été rapportés.</Contents>
+            </TextSection>
+          </TextSectionList>
+        </SummaryInformation>
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>166032</OrphaCode>
+            <PreferredTerm lang="fr">Dysplasie épiphysaire multiple avec miniépiphyse</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    <Disorder id="3">
+      <OrphaCode>61</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=61</ExpertLink>
+      <Name lang="fr">Alpha-mannosidose</Name>
+      <FlagValue>1</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="1">
+        <Synonym lang="fr">Déficit en alpha-D-mannosidase lysosomale</Synonym>
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="1">
+        <SummaryInformation id="1000" lang="fr">
+          <TextSectionList count="1">
+            <TextSection id="117595" lang="fr">
+              <TextSectionType id="16907">
+                <Name lang="fr">Définition</Name>
+              </TextSectionType>
+              <Contents>L'alpha-mannosidose est une maladie héréditaire de surcharge lysosomale caractérisée par une immunodéficience, des anomalies faciales et squelettiques, une déficience auditive et un déficit intellectuel.</Contents>
+            </TextSection>
+          </TextSectionList>
+        </SummaryInformation>
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>61</OrphaCode>
+            <PreferredTerm lang="fr">Alpha-mannosidose</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    <Disorder id="17602">
+      <OrphaCode>166029</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=166029</ExpertLink>
+      <Name lang="fr">Dysplasie épiphysaire multiple avec dysplasie fémorale sévère</Name>
+      <FlagValue>1</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="0">
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="1">
+        <SummaryInformation id="110813" lang="fr">
+          <TextSectionList count="1">
+            <TextSection id="140367" lang="fr">
+              <TextSectionType id="16907">
+                <Name lang="fr">Définition</Name>
+              </TextSectionType>
+              <Contents>Une dysplasie osseuse primaire rare, caractérisée par une dysplasie fémorale proximale sévère apparaissant précocement, associée à une absence presque complète des centres d'ossification secondaires, et un développement anormal des têtes fémorales (petites et larges avec des métaphyses irrégulières). Elle est associée à une anomalie de la marche, une taille légèrement diminuée, une arthralgie, une raideur articulaire avec une limitation de la mobilité de la hanche et une acétabula irrégulière, ainsi qu'une douleur au niveau de la hanche et des genoux. Une coxa vara et de légères modifications vertébrales sont aussi associées.</Contents>
+            </TextSection>
+          </TextSectionList>
+        </SummaryInformation>
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>166029</OrphaCode>
+            <PreferredTerm lang="fr">Dysplasie épiphysaire multiple avec dysplasie fémorale sévère</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    <Disorder id="17605">
+      <OrphaCode>166038</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=166038</ExpertLink>
+      <Name lang="fr">Chondrodysplasie métaphysaire type Kaitila</Name>
+      <FlagValue>513</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="0">
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="0">
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>166038</OrphaCode>
+            <PreferredTerm lang="fr">Chondrodysplasie métaphysaire type Kaitila</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    <Disorder id="5">
+      <OrphaCode>93</OrphaCode>
+      <ExpertLink lang="fr">http://www.orpha.net/consor/cgi-bin/OC_Exp.php?lng=fr&amp;Expert=93</ExpertLink>
+      <Name lang="fr">Aspartylglucosaminurie</Name>
+      <FlagValue>1</FlagValue>
+      <Totalstatus lang="fr">Active</Totalstatus>
+      <SynonymList count="1">
+        <Synonym lang="fr">Déficit en aspartylglucosaminidase</Synonym>
+      </SynonymList>
+      <DisorderType id="21394">
+        <Name lang="fr">Maladie</Name>
+      </DisorderType>
+      <ClassificationLevel id="36547">
+        <Name lang="fr">Pathologie</Name>
+      </ClassificationLevel>
+      <DisorderDisorderAssociationList count="0">
+      </DisorderDisorderAssociationList>
+      <SummaryInformationList count="1">
+        <SummaryInformation id="1004" lang="fr">
+          <TextSectionList count="0">
+          </TextSectionList>
+        </SummaryInformation>
+      </SummaryInformationList>
+      <AggregationLevelSection>
+        <AggregationLevelList count="1">
+          <AggregationLevel>
+            <OrphaCode>93</OrphaCode>
+            <PreferredTerm lang="fr">Aspartylglucosaminurie</PreferredTerm>
+            <AggregationLevelStatus>Applicable</AggregationLevelStatus>
+          </AggregationLevel>
+        </AggregationLevelList>
+      </AggregationLevelSection>
+    </Disorder>
+    </DisorderList>
+</JDBOR>

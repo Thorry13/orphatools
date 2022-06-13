@@ -1,0 +1,23 @@
+Package: orphatools
+Title: Tools to deal with the orpha classifications
+Version: 0.0.0.9000
+Authors@R: 
+    person("Remy", "Dumas", , "remy.dumas@aphp.fr", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Use the orpha classifications to find ancestors, children or even relatives of an orpha code.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    dplyr,
+    igraph,
+    magrittr,
+    purrr,
+    tidyr,
+    xml2
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
