@@ -77,7 +77,7 @@ classNode2code = function(classNode)
 #' @export
 #'
 #' @examples
-get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE)
+get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, full_connections=FALSE)
 {
   get_ancestors_from_class = function(orphaCode, class_data)
   {
@@ -99,12 +99,26 @@ get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE)
       return(NULL)
 
     # Build a from/to data frame based on the ancestors data (ancestors already are in the correct order)
-    df_list =
-      lapply(nodes_ancestors,
-             function(node_ancestors) data.frame(from = node_ancestors,
-                                                 to = c(orphaCode,
-                                                        na.omit(lag(node_ancestors,1))),
-                                                 depth = -1:-length(node_ancestors)))
+    if(full_connections)
+    {
+      df_list =
+        lapply(nodes_ancestors,
+               function(node_ancestors) lapply(seq_len(length(node_ancestors)-1),
+                                               function(i) data.frame(from = node_ancestors[(1+i):length(node_ancestors)],
+                                                                      to = lag(node_ancestors,i) %>% na.omit(),
+                                                                      depth = (-1-i):-length(node_ancestors))) %>%
+                 append(list(data.frame(from = node_ancestors, to = orphaCode, depth = (-1:-length(node_ancestors))))) %>%
+                 bind_rows())
+    }
+    else
+    {
+      df_list =
+        lapply(nodes_ancestors,
+               function(node_ancestors) data.frame(from = node_ancestors,
+                                                   to = c(orphaCode,
+                                                          na.omit(lag(node_ancestors,1))),
+                                                   depth = -1:-length(node_ancestors)))
+    }
 
     # Merge the different found branches
     df_ancestors = bind_rows(df_list)
@@ -170,6 +184,8 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, ...)
 
   # Read additional parameters
   args = list(...)
+  if(!'depth' %in% names(args))
+    args$depth = 0
 
   # If the Orpha code is not entered, then choose the classification head code
   if(is.null(orphaCode))
@@ -217,16 +233,16 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, ...)
                                                         c(list(orphaCode=childCode,
                                                                class_data=class_data,
                                                                codes_only=FALSE),
-                                                          args) %>% as.list()))
+                                                        args) %>% as.list()))
 
     # Merge descendants of all children
     df_descendants =
-      bind_rows(df_children, df_further_descendants) %>% distinct() %>% as.data.frame()
+      bind_rows(df_children, df_further_descendants) %>% distinct()
 
     # Return
     if(codes_only)
       return(unique(df_descendants$to))
-    else if(!('return_depth' %in% names(args) && args$return_depth))
+    else if('return_depth' %in% names(args) && !args$return_depth)
       return(df_descendants[,c('from', 'to')])
     else
       return(df_descendants)
@@ -242,28 +258,55 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, ...)
 #'
 #' @return The built base graph
 #' @import magrittr
-#' @importFrom igraph graph_from_data_frame set_vertex_attr
+#' @importFrom igraph graph_from_data_frame as_data_frame set_vertex_attr V
 #' @importFrom dplyr bind_rows distinct
 #' @importFrom stats na.omit
+#' @importFrom purrr keep is_empty
 #' @export
 #'
 #' @examples
 #' all_class = load_classifications()
 #' graph = get_common_graph(c(303,304,305), all_class[[6]])
-get_common_graph = function(codes_list, class_data=NULL, colored=FALSE)
+get_common_graph = function(codes_list, class_data=NULL, colored=FALSE, what = 'both', full_connections = FALSE)
 {
-  df_ancestors_list = codes_list %>%
-    lapply(function(code) get_ancestors(code, class_data)) %>%
-    keep(function(df) !is_empty(df))
-  graph = df_ancestors_list %>%
-    lapply(graph_from_data_frame) %>%
-    merge_graphs()
+  if(what=='both')
+    what = c('ancestors', 'descendants')
+
+  if('ancestors' %in% what)
+  {
+    df_ancestors_list = codes_list %>%
+      lapply(function(code) get_ancestors(code, class_data, full_connections = full_connections)) %>%
+      keep(function(df) !is_empty(df))
+    graph_ancestors = df_ancestors_list %>%
+      lapply(graph_from_data_frame) %>%
+      merge_graphs()
+  }
+  else
+    graph_ancestors = NULL
+
+  if('descendants' %in% what)
+  {
+    graph_descendants = NULL
+    for(current_code in codes_list)
+    {
+      if(is.null(graph_descendants) ||
+         !current_code %in% as.numeric(names(V(graph_descendants))))
+      {
+        df_descendants = get_descendants(current_code, class_data)
+        if(!is_empty(df_descendants))
+          graph_descendants = merge_graphs(list(graph_descendants,
+                                                graph_from_data_frame(df_descendants)))
+      }
+    }
+  }
+  else
+    graph_descendants = NULL
+
+  graph = merge_graphs(graphs_list = list(graph_ancestors, graph_descendants))
 
   if(colored)
   {
-    df_ancestors = bind_rows(df_ancestors_list)
-    nodes = unique(c(df_ancestors$from, df_ancestors$to))
-    nodes = na.omit(nodes)
+    nodes = V(graph) %>% names %>% as.numeric()
     graph = set_vertex_attr(graph, 'color', index=nodes %in% codes_list, 'green')
     graph = set_vertex_attr(graph, 'color', index=!nodes %in% codes_list, 'tomato')
   }
@@ -289,6 +332,26 @@ get_common_graph = function(codes_list, class_data=NULL, colored=FALSE)
 #' @examples
 get_lowest_groups = function(orphaCode, class_data=NULL)
 {
+  keep_lowest_groups = function(code, df_ancestors)
+  {
+    df_select = df_ancestors %>% filter(to == code)
+    df_select$classLevel = df_select$from %>%
+      sapply(function(code) get_code_properties(code, nom_data)['classLevel'])
+
+    groups_supp = NULL
+    if(sum(df_select$classLevel != 36540))
+      groups_supp = df_select %>%
+        filter(classLevel != 36540) %>%
+        pull(from) %>%
+        sapply(keep_lowest_groups, df_ancestors) %>%
+        unique()
+
+    lowest_groups = unique(c(df_select %>% filter(classLevel == 36540) %>% pull(from),
+                             groups_supp))
+    return(lowest_groups)
+  }
+  nom_data = load_nomenclature()
+
   # Check if it isn't a group already
   props = get_code_properties(orphaCode)
   if(props['classLevel'] == 36540)
@@ -296,20 +359,18 @@ get_lowest_groups = function(orphaCode, class_data=NULL)
 
   # Find groups above the code
   df_ancestors = get_ancestors(orphaCode, class_data)
-  group_ancestors = df_ancestors$from %>%
-    sapply(get_code_properties) %>%
-    t %>%
-    as.data.frame() %>%
-    filter(classLevel == 36540) %>%
-    pull(orphaCode) %>% as.character()
+  group_ancestors = keep_lowest_groups(orphaCode, df_ancestors)
 
   # Check if a parent is not an ancestor of another
-  graph = get_common_graph(group_ancestors)
+  graph = get_common_graph(group_ancestors, what='ancestors')
   combs = expand.grid(group_ancestors, group_ancestors)
   to_rem = combs %>%
-    apply(1, function(x) all_simple_paths(graph, x[1], x[2])) %>% # Try to find a path between two ancestors
+    apply(1, function(x) all_simple_paths(graph,
+                                          as.character(x[1]),
+                                          as.character(x[2]))) %>% # Try to find a path between two ancestors
     keep(function(path) length(path) > 0) %>% # If a path is found, ancestor is discarded
-    sapply(function(path) path[[1]][1]) %>% names %>% unique() # Clean results
+    sapply(function(path) path[[1]][1]) %>%
+    names %>% as.numeric() %>% unique() # Clean results
 
   # Remove ancestors to be discarded to keep the lowest only
   lowest_groups = setdiff(group_ancestors, to_rem) %>% as.numeric()
@@ -395,11 +456,13 @@ get_LCAs = function(codes_list, class_data=NULL)
       return(pathsPair[[1]][index])
   }
 
-  codes_list = as.character(codes_list) # Convert codes into character vectors
+  # codes_list = as.character(codes_list) # Convert codes into character vectors
   graph = get_common_graph(codes_list, class_data) %>% add_superNode()
 
   # Find all paths going from the root to the codes in the given list
-  all_paths = codes_list %>% lapply(function(current_to) all_simple_paths(graph, from='SuperNode', to=current_to) %>%
+  all_paths = codes_list %>%
+    as.character() %>%
+    lapply(function(current_to) all_simple_paths(graph, from='SuperNode', to=current_to) %>%
                                       lapply(function(path) path %>% names()))
 
   # Find all possible pairs for the calculated paths
@@ -527,30 +590,35 @@ get_relatives = function(codes_list, class_data=NULL, colored=TRUE, children_onl
 #' @export
 merge_graphs = function(graphs_list)
 {
-  # Merge nodes
-  df_nodes = graphs_list %>%
-    lapply(function(graph) as_data_frame(graph, what='vertices')) %>%
-    bind_rows() %>%
-    distinct()
+  graphs_list = graphs_list[!sapply(graphs_list, is.null)]
 
-  # Merge edges
-  df_edges = graphs_list %>%
-    lapply(function(graph) as_data_frame(graph, what='edges')) %>%
-    bind_rows()
+  if(!is_empty(graphs_list))
+    {
+    # Merge nodes
+    df_nodes = graphs_list %>%
+      lapply(function(graph) as_data_frame(graph, what='vertices')) %>%
+      bind_rows() %>%
+      distinct()
 
-  # Manage additional columns
-  if('depth' %in% colnames(df_edges)){
-    df_edges = df_edges %>%
-      group_by(from, to) %>%
-      summarize(depth=max(depth, na.rm = TRUE))
-    df_edges$depth = df_edges$depth %>%
-      replace(which(is.infinite(df_edges$depth)), NA)}
-  else
-    df_edges = df_edges %>% distinct()
+    # Merge edges
+    df_edges = graphs_list %>%
+      lapply(function(graph) as_data_frame(graph, what='edges')) %>%
+      bind_rows()
 
-  # Merge graphs
-  merged_graph = graph_from_data_frame(df_edges, vertices=df_nodes)
-  return(merged_graph)
+    # Manage additional columns
+    if('depth' %in% colnames(df_edges)){
+      df_edges = df_edges %>%
+        group_by(from, to) %>%
+        summarize(depth=max(depth, na.rm = TRUE))
+      df_edges$depth = df_edges$depth %>%
+        replace(which(is.infinite(df_edges$depth)), NA)}
+    else
+      df_edges = df_edges %>% distinct()
+
+    # Merge graphs
+    merged_graph = graph_from_data_frame(df_edges, vertices=df_nodes)
+    return(merged_graph)
+  }
 }
 
 
