@@ -157,8 +157,15 @@ kable(df_counts, 'html')
 
 
 ## New counting method
+#### Without deduplication
 ```{r}
 df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame()
+kable(df_counts, 'html')
+```
+
+#### With deduplication
+```{r}
+df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
 kable(df_counts, 'html')
 ```
 
