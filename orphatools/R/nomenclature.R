@@ -46,6 +46,8 @@ get_code_properties = function(orphaCode, nom_data=NULL)
             flagValue = flagValue,
             disorderType = disorderType,
             classLevel = classLevel)
+
+  rm(nom_data)
   return(props)
 }
 
