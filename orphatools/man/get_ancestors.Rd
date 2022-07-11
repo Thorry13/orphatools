@@ -4,7 +4,12 @@
 \alias{get_ancestors}
 \title{Find all ancestors of a given Orpha code as it is in the Orphanet classification data}
 \usage{
-get_ancestors(orphaCode, class_data = NULL, codes_only = FALSE)
+get_ancestors(
+  orphaCode,
+  class_data = NULL,
+  codes_only = FALSE,
+  full_connections = FALSE
+)
 }
 \arguments{
 \item{orphaCode}{The numerical Orpha code}

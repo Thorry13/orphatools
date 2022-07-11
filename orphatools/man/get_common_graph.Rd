@@ -4,7 +4,13 @@
 \alias{get_common_graph}
 \title{Get a base graph from a codes list, which is basically a graph including the relevant ancestors and the given codes.}
 \usage{
-get_common_graph(codes_list, class_data = NULL, colored = FALSE)
+get_common_graph(
+  codes_list,
+  class_data = NULL,
+  colored = FALSE,
+  what = "both",
+  full_connections = FALSE
+)
 }
 \arguments{
 \item{codes_list}{The codes to build the base graph from}
