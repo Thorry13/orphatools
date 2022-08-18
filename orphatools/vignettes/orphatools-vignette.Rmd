@@ -10,7 +10,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width=8, fig.height=8
 )
 ```
 
@@ -28,29 +29,36 @@ library(dplyr)
   * Disorder : 36547
   * Subtype of disorder : 36554
 
-```{r}
+```{r props1}
 code = 303 # Dystrophic epidermolysis bullosa
 props = get_code_properties(code)
 kable(t(props), 'html')
 ```
+It is however recommended to load the nomenclature data first to avoid memory overflow when `get_code_properties` is called multiple times.
+
+```{r props2}
+nom_data = load_nomenclature()
+props = get_code_properties(code, nom_data = nom_data)
+kable(t(props), 'html')
+```
 
 # Find corresponding disorder / lowest groups of disorders
-```{r}
-subtype_to_disorder(subtypeCode = 158676)
-subtype_to_disorder(subtypeCode = 303)
+```{r rolling_up}
+subtype_to_disorder(subtypeCode = 158676) # 158676 is a subtype of disorder
+subtype_to_disorder(subtypeCode = 303) # 303 is a group of disorder
 get_lowest_groups(orphaCode = 158676)
 ```
 
 
 # Ancestors
 ## Find ancestors codes
-```{r}
+```{r ancestors1}
 ancestors_codes = get_ancestors(code, codes_only=TRUE)
 print(ancestors_codes)
 ```
 
 ## Build edgelist
-```{r}
+```{r ancestors2}
 df_ancestors = get_ancestors(code)
 kable(df_ancestors, 'html')
 ```
@@ -58,13 +66,13 @@ Depth was calculated for displaying purpose.
 
 ### Specify classification
 **Classifications list :**
-```{r}
+```{r class}
 all_class = load_classifications()
 print(names(all_class))
 ```
 
 
-```{r}
+```{r ancestors3}
 df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
 kable(df_ancestors, 'html')
 df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
@@ -74,13 +82,13 @@ kable(df_ancestors, 'html')
 
 # Descendants
 ## Find descendants codes
-```{r}
+```{r descendants1}
 descendants_codes = get_descendants(code, codes_only=TRUE)
 print(descendants_codes)
 ```
 
 ## Build edgelist
-```{r}
+```{r descendants2}
 df_descendants = get_descendants(code)
 kable(df_descendants, 'html')
 ```
@@ -88,7 +96,7 @@ Depth was calculated for displaying purpose.
 
 ### Specify classification
 Specifying classification won't change the output but will just save a small amount of time.
-```{r}
+```{r descendants3}
 df_descendants = get_descendants(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
 kable(df_descendants, 'html')
 df_descendants = get_descendants(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
@@ -98,31 +106,32 @@ kable(df_ancestors, 'html')
 
 # Visualization
 ## Build igraph object
-```{r}
+```{r visu1}
 df_ancestors = get_ancestors(code)
 graph_ancestors = igraph::graph_from_data_frame(df_ancestors)
 ```
 
 ## Plot
-```{r}
+```{r visu2}
 plot(graph_ancestors)
 plot(graph_ancestors, layout=igraph::layout_as_tree)
-plot(graph_ancestors, layout=layout_custom)
+plot(graph_ancestors, layout=layout_tree)
 ```
+Try `interactive_plot` function for a dynamic plot.
 
 # Operations on multiple codes
 ## Common graph
 The "common graph" merges the ancestors of each code in the list.
-```{r}
+```{r common_graph}
 codes_list = c(303, 305, 595356)
 common_graph = get_common_graph(codes_list)
-plot(common_graph, layout=layout_custom)
+plot(common_graph, layout=layout_tree)
 common_graph = get_common_graph(codes_list, colored=TRUE)
-plot(common_graph, layout=layout_custom)
+plot(common_graph, layout=layout_tree)
 ```
 
 ## Lowest Common Ancestors (LCAs)
-```{r}
+```{r lcas}
 get_LCAs(codes_list)
 get_LCAs(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
 ```
@@ -133,17 +142,17 @@ This function is useful to find codes that might have been forgotten.
 Setting *children_only* to TRUE will make the process much faster, but some "cousin codes" may be missed.
 
 Setting *children_only* to FALSE will find every forgotten codes, but might last an eternity if an LCA is high in classification.
-```{r}
+```{r relatives}
 new_graph = get_relatives(codes_list)
-plot(new_graph, layout=layout_custom)
+plot(new_graph, layout=layout_tree)
 new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
-plot(new_graph, layout=layout_custom)
+plot(new_graph, layout=layout_tree)
 new_graph = get_relatives(codes_list, children_only = TRUE)
-plot(new_graph, layout=layout_custom)
+plot(new_graph, layout=layout_tree)
 ```
 
 # Counting codes
-```{r}
+```{r counting1}
 df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
                          code = c(303, 158673, 595356, 305, 79406, 79406, 595356))
 kable(df_patients, 'html')
@@ -158,13 +167,13 @@ kable(df_counts, 'html')
 
 ## New counting method
 #### Without deduplication
-```{r}
+```{r counting2}
 df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame()
 kable(df_counts, 'html')
 ```
 
 #### With deduplication
-```{r}
+```{r counting3}
 df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
 kable(df_counts, 'html')
 ```

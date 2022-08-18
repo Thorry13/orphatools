@@ -4,10 +4,10 @@
 \alias{find_roots}
 \title{Find the root or the roots of a given graph.}
 \usage{
-find_roots(graph, first_only = FALSE)
+find_roots(X, first_only = FALSE)
 }
 \arguments{
-\item{graph}{The graph to find the root from}
+\item{X}{The graph (igraph object or edgelist as a dataframe) to find the roots from}
 
 \item{first_only}{If TRUE, return one root only}
 }
@@ -18,7 +18,9 @@ The root(s) of the given graph as a numeric code
 Find the root or the roots of a given graph.
 }
 \examples{
-all_class = load_classifications()
-graph = get_common_graph(c(303,304,305), all_class[[6]])
-root = find_roots(graph)
+edgelist = get_ancestors(303)
+graph = graph_from_data_frame(edgelist)
+
+roots = find_roots(edgelist)
+roots = find_roots(graph)
 }

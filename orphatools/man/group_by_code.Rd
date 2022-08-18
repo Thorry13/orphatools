@@ -14,7 +14,7 @@ group_by_code(.data, ..., class_data = NULL, include_descendants = TRUE)
 
 \item{class_data}{The classification data to consider. If NULL, automatically search a classification for each code}
 
-\item{include_descendants}{}
+\item{include_descendants}{If TRUE (default), for each code every descendants of this code are included in its group}
 }
 \value{
 Results of the group_by operation
@@ -22,4 +22,11 @@ Results of the group_by operation
 \description{
 A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
 Aggregation works if column to group is named "code".
+}
+\examples{
+df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
+                         code = c(303, 158673, 595356, 305, 79406, 79406, 595356))
+df_counts = df_patients \%>\% group_by(code) \%>\% count() \%>\% as.data.frame() # Naive counting
+df_counts = df_patients \%>\% group_by_code() \%>\% count() \%>\% as.data.frame() # New method - Without deduplication
+df_counts = df_patients \%>\% group_by_code() \%>\% summarize(n = n_distinct(patient_id)) \%>\% as.data.frame() # New method - With deduplication
 }

@@ -3,8 +3,6 @@
 #' @return The nomenclature data as an xml2 object
 #' @importFrom xml2 read_xml
 #' @export
-#'
-#' @examples
 load_nomenclature = function()
 {
   # Load data
@@ -20,6 +18,7 @@ load_nomenclature = function()
 #'
 #' @param orphaCode The Orpha code to consider
 #' @param nom_data The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.
+#' It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.
 #'
 #' @return The properties (flag value, disorder type, classification level) associated to the given Orpha code
 #' @import magrittr
@@ -27,6 +26,11 @@ load_nomenclature = function()
 #' @export
 #'
 #' @examples
+#' code = 303
+#' props = get_code_properties(code)
+#'
+#' nom_data = load_nomenclature()
+#' props = get_code_properties(code, nom_data = nom_data)
 get_code_properties = function(orphaCode, nom_data=NULL)
 {
   # Load nomenclature if necessary

@@ -20,3 +20,9 @@ The lowest common ancestors of the given codes
 Extract the lowest common ancestors (LCAs) of a codes list in a given graph which was previously calculated.
 Discussion : When there are two independent LCAs, we don't compare how "high" there are compared to the given nodes.
 }
+\examples{
+codes_list = c(303, 305, 595356)
+
+get_LCAs(codes_list)
+get_LCAs(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
+}

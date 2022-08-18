@@ -4,25 +4,35 @@
 \alias{get_descendants}
 \title{Get descendants recusevily from a given Orpha code}
 \usage{
-get_descendants(orphaCode, class_data = NULL, codes_only = FALSE, ...)
+get_descendants(
+  orphaCode,
+  class_data = NULL,
+  codes_only = FALSE,
+  shortcuts = FALSE
+)
 }
 \arguments{
 \item{orphaCode}{The numerical Orpha code}
 
 \item{class_data}{The classification data to consider. If NULL, find one automatically. Descendance is independant from classification.}
 
-\item{codes_only}{If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph}
-
-\item{...}{Additional parameters (edge_from_leaves, depth, return_depth) :
+\item{codes_only}{If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph
 \itemize{
 \item edge_from_leaves : The leaves (last descendants) also belong to the "from" column
 \item depth : Depth information to transmit and increment recursevily
 \item return_depth : Return depth for each edge in the final data.frame
 }}
+
+\item{shortcuts}{(default FALSE) if TRUE, add an edge from the given Orpha code to every found descendants}
 }
 \value{
 A from/to data.frame ready to be converted into a graph, or codes only if asked so
 }
 \description{
 Get descendants recusevily from a given Orpha code
+}
+\examples{
+code = 303
+descendants_codes = get_descendants(code, codes_only=TRUE)
+df_descendants = get_descendants(code)
 }

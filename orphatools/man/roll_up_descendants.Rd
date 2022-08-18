@@ -5,15 +5,14 @@
 \title{For counting operations, all descendants of a given code should be rolled up.
 The rows corresponding to a descendant are then duplicated to be attributed to the given code also}
 \usage{
-roll_up_descendants(.data, orphaCode, class_data = NULL)
+roll_up_descendants(.data, orphaCode, edgelist)
 }
 \arguments{
 \item{.data}{The data to consider}
 
 \item{orphaCode}{The given Orpha code}
 
-\item{class_data}{The classification data to consider.
-If NULL, automatically search a classification contatining the given Orpha code}
+\item{edgelist}{Information of how codes are related to each other}
 }
 \value{
 The duplicated descendants rows newly attributed to the given Orpha code
