@@ -20,12 +20,16 @@ get_relatives(
 
 \item{children_only}{If TRUE, no ancestors are searched and the given codes are considered as the graph roots.
 If FALSE, roots are the LCAs of the given codes. When the classification head is found as LCA, user may experiment calculation issues.}
-
-\item{base_graph}{The graph to base the calculation on}
 }
 \value{
 The given codes and their relevant relatives according to the classification
 }
 \description{
 Find relationships between the given codes and tries to extend it with relevant ones.
+}
+\examples{
+codes_list = codes_list = c(303, 305, 595356)
+new_graph = get_relatives(codes_list)
+new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
+new_graph = get_relatives(codes_list, children_only = TRUE)
 }

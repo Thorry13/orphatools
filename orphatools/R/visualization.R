@@ -11,7 +11,12 @@
 #' @export
 #'
 #' @examples
-layout_custom = function(graph, reverse_y=TRUE, factor=5)
+#' df_ancestors = get_ancestors(303)
+#' graph = igraph::graph_from_data_frame(df_ancestors)
+#' plot(graph)
+#' plot(graph, layout=igraph::layout_as_tree)
+#' plot(graph, layout=layout_tree)
+layout_tree = function(graph, reverse_y=TRUE, factor=5)
 {
   options(dplyr.summarise.inform=F)
 
@@ -124,4 +129,27 @@ horizontal_sizes = function(graph, root_node=NULL)
       return(rbind(data.frame(node=root_node, size=root_size), df_children_sizes))
     }
   }
+}
+
+
+#' This function was designed for a better visualization of large graphs.
+#'
+#' @param graph An igraph object to visualize
+#'
+#' @import magrittr
+#' @import visNetwork
+#' @importFrom dplyr mutate rename
+#' @importFrom igraph as_data_frame
+#' @export
+#'
+#' @examples
+#' graph = get_descendants(68346)
+#' interactive_plot(graph)
+interactive_plot = function(graph)
+{
+  visNetwork(graph %>%
+               as_data_frame(what='vertices') %>%
+               mutate(label=name) %>%
+               rename(id=name),
+             graph %>% as_data_frame(what='edges'))
 }

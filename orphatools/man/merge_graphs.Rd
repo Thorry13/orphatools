@@ -15,3 +15,9 @@ The merged graph
 \description{
 Convert a list of graphs into a single merged graph
 }
+\examples{
+code = 303
+df_descendants = get_descendants(code)
+df_ancestors = get_ancestors(code)
+merged_graph = merge_graphs(list(df_descendants, df_ancestors))
+}
