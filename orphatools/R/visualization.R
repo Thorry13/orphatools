@@ -265,13 +265,14 @@ color_graph = function(graph, emphasize_nodes=NULL, display_class_levels=TRUE)
   if(display_class_levels)
   {
     nodes = V(graph) %>% names
-    props = nodes %>%
-      lapply(function(node) get_code_properties(node, literal_values = TRUE)) %>%
-      bind_rows()
+    class_levels = load_class_levels()
+    codes_index = match(nodes, class_levels$orphaCode)
+    classLevel_codif = class_levels$classLevel[codes_index]
+    classLevel = translate_class_level(classLevel_codif)
 
-    graph = set_vertex_attr(graph, 'color', index=props$classLevel == 'Group', 'royalblue1')
-    graph = set_vertex_attr(graph, 'color', index=props$classLevel == 'Disorder', 'palegreen3')
-    graph = set_vertex_attr(graph, 'color', index=props$classLevel == 'Subtype', 'plum3')
+    graph = set_vertex_attr(graph, 'color', index=classLevel == 'Group', 'royalblue1')
+    graph = set_vertex_attr(graph, 'color', index=classLevel == 'Disorder', 'palegreen3')
+    graph = set_vertex_attr(graph, 'color', index=classLevel == 'Subtype', 'plum3')
   }
 
   return(graph)

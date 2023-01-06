@@ -4,12 +4,10 @@
 \alias{translate_flag_values}
 \title{Translate a flagValue column into human readable data}
 \usage{
-translate_flag_values(df, col = "flagValue")
+translate_flag_values(V)
 }
 \arguments{
-\item{df, }{The dataframe containing the flagValue column}
-
-\item{col, }{To change the flagValue column name if necessary}
+\item{V, }{Vector to translate}
 }
 \value{
 The dataframe with the translated column

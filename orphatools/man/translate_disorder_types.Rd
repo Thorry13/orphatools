@@ -4,12 +4,10 @@
 \alias{translate_disorder_types}
 \title{Translate a disorderType column into human readable data}
 \usage{
-translate_disorder_types(df, col = "disorderType")
+translate_disorder_types(V)
 }
 \arguments{
-\item{df, }{The dataframe containing the disorderType column}
-
-\item{col, }{To change the disorderType column name if necessary}
+\item{V, }{Vector to translate}
 }
 \value{
 The dataframe with the translated column

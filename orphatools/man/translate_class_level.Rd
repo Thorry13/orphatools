@@ -4,12 +4,10 @@
 \alias{translate_class_level}
 \title{Translate a classLevel column into human readable data}
 \usage{
-translate_class_level(df, col = "classLevel")
+translate_class_level(V)
 }
 \arguments{
-\item{df, }{The dataframe containing the classLevel column}
-
-\item{col, }{To change the classLevel column name if necessary}
+\item{V, }{Vector to translate}
 }
 \value{
 The dataframe with the translated column

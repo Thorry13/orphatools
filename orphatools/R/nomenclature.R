@@ -130,46 +130,40 @@ load_class_levels = function(load=TRUE, save=TRUE)
 
 #' Translate a flagValue column into human readable data
 #'
-#' @param df, The dataframe containing the flagValue column
-#' @param col, To change the flagValue column name if necessary
+#' @param V, Vector to translate
 #'
 #' @return The dataframe with the translated column
 #' @export
 #'
-translate_flag_values = function(df, col = 'flagValue')
+translate_flag_values = function(V)
 {
-  df = df %>%
-    mutate(!!col := flagValue_literal[.data[[col]]])
-  return(df)
+  new_V = flagValue_literal[V]
+  return(new_V)
 }
 
 #' Translate a disorderType column into human readable data
 #'
-#' @param df, The dataframe containing the disorderType column
-#' @param col, To change the disorderType column name if necessary
+#' @param V, Vector to translate
 #'
 #' @return The dataframe with the translated column
 #' @export
 #'
-translate_disorder_types = function(df, col = 'disorderType')
+translate_disorder_types = function(V)
 {
-  df = df %>%
-    mutate(!!col := disorderType_literal[.data[[col]]])
-  return(df)
+  new_V = disorderType_literal[V]
+  return(new_V)
 }
 
 
 #' Translate a classLevel column into human readable data
 #'
-#' @param df, The dataframe containing the classLevel column
-#' @param col, To change the classLevel column name if necessary
+#' @param V, Vector to translate
 #'
 #' @return The dataframe with the translated column
 #' @export
 #'
-translate_class_level = function(df, col = 'classLevel')
+translate_class_level = function(V)
 {
-  df = df %>%
-    mutate(classLevel = classLevel_literal[classLevel])
-  return(df)
+  new_V = classLevel_literal[V]
+  return(new_V)
 }
