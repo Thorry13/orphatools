@@ -4,19 +4,12 @@
 \alias{get_relatives}
 \title{Find relationships between the given codes and tries to extend it with relevant ones.}
 \usage{
-get_relatives(
-  codes_list,
-  class_data = NULL,
-  colored = TRUE,
-  children_only = FALSE
-)
+get_relatives(codes_list, class_data = NULL, children_only = FALSE)
 }
 \arguments{
 \item{codes_list}{The codes list to extend}
 
 \item{class_data}{The classification to consider}
-
-\item{colored}{If TRUE, nodes are colored with green for the given codes and with red for the codes found as relatives}
 
 \item{children_only}{If TRUE, no ancestors are searched and the given codes are considered as the graph roots.
 If FALSE, roots are the LCAs of the given codes. When the classification head is found as LCA, user may experiment calculation issues.}
@@ -28,7 +21,9 @@ The given codes and their relevant relatives according to the classification
 Find relationships between the given codes and tries to extend it with relevant ones.
 }
 \examples{
-codes_list = codes_list = c(303, 305, 595356)
+codes_list = codes_list = c('303', '305', '595356')
+all_class = load_classifications()
+
 new_graph = get_relatives(codes_list)
 new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
 new_graph = get_relatives(codes_list, children_only = TRUE)

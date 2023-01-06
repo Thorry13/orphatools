@@ -24,8 +24,10 @@ A common group_by operation to take descendants of the present Orpha codes into 
 Aggregation works if column to group is named "code".
 }
 \examples{
+library(magrittr)
+library(dplyr)
 df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
-                         code = c(303, 158673, 595356, 305, 79406, 79406, 595356))
+                         code = c('303', '158673', '595356', '305', '79406', '79406', '595356'))
 df_counts = df_patients \%>\% group_by(code) \%>\% count() \%>\% as.data.frame() # Naive counting
 df_counts = df_patients \%>\% group_by_code() \%>\% count() \%>\% as.data.frame() # New method - Without deduplication
 df_counts = df_patients \%>\% group_by_code() \%>\% summarize(n = n_distinct(patient_id)) \%>\% as.data.frame() # New method - With deduplication

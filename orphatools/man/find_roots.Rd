@@ -18,8 +18,8 @@ The root(s) of the given graph as a numeric code
 Find the root or the roots of a given graph.
 }
 \examples{
-edgelist = get_ancestors(303)
-graph = graph_from_data_frame(edgelist)
+edgelist = get_ancestors('303')
+graph = igraph::graph_from_data_frame(edgelist)
 
 roots = find_roots(edgelist)
 roots = find_roots(graph)

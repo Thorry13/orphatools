@@ -34,15 +34,17 @@ roll_up_descendants = function(.data, orphaCode, edgelist)
 #' @export
 #'
 #' @examples
+#' library(magrittr)
+#' library(dplyr)
 #' df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
-#'                          code = c(303, 158673, 595356, 305, 79406, 79406, 595356))
+#'                          code = c('303', '158673', '595356', '305', '79406', '79406', '595356'))
 #' df_counts = df_patients %>% group_by(code) %>% count() %>% as.data.frame() # Naive counting
 #' df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame() # New method - Without deduplication
 #' df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame() # New method - With deduplication
 group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE)
 {
   # Find all Orpha codes present in the data
-  all_codes = unique(.data$code) %>% as.numeric()
+  all_codes = unique(.data$code) # %>% as.numeric()
 
   common_graph = get_common_graph(all_codes, class_data = class_data,
                                   what = 'descendants', shortcuts = TRUE)

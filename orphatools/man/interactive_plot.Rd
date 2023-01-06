@@ -13,6 +13,7 @@ interactive_plot(graph)
 This function was designed for a better visualization of large graphs.
 }
 \examples{
-graph = get_descendants(68346)
+D = get_descendants('68346')
+graph = igraph::graph_from_data_frame(D)
 interactive_plot(graph)
 }

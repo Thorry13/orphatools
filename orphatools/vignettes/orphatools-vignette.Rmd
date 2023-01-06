@@ -16,9 +16,9 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(orphatools)
-library(kableExtra)
-library(dplyr)
+suppressWarnings(suppressPackageStartupMessages(library(orphatools)))
+suppressWarnings(suppressPackageStartupMessages(library(kableExtra)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 ```
 
 
@@ -30,16 +30,19 @@ library(dplyr)
   * Subtype of disorder : 36554
 
 ```{r props1}
-code = 303 # Dystrophic epidermolysis bullosa
+code = '303' # Dystrophic epidermolysis bullosa
 props = get_code_properties(code)
-kable(t(props), 'html')
+kable(props, 'html')
+
+props = get_code_properties(code, literal_values = TRUE)
+kable(props, 'html')
 ```
 It is however recommended to load the nomenclature data first to avoid memory overflow when `get_code_properties` is called multiple times.
 
 ```{r props2}
 nom_data = load_nomenclature()
 props = get_code_properties(code, nom_data = nom_data)
-kable(t(props), 'html')
+kable(props, 'html')
 ```
 
 # Find corresponding disorder / lowest groups of disorders
@@ -105,28 +108,38 @@ kable(df_ancestors, 'html')
 /
 
 # Visualization
-## Build igraph object
+## Plots
 ```{r visu1}
 df_ancestors = get_ancestors(code)
 graph_ancestors = igraph::graph_from_data_frame(df_ancestors)
-```
 
-## Plot
-```{r visu2}
 plot(graph_ancestors)
 plot(graph_ancestors, layout=igraph::layout_as_tree)
 plot(graph_ancestors, layout=layout_tree)
 ```
 Try `interactive_plot` function for a dynamic plot.
 
+## Hierarchical structures
+```{r visu2}
+df = get_descendants(307711)
+graph = igraph::graph_from_data_frame(df)
+plot(graph)
+
+df_index = assign_indent_index(df)
+df_test = df_index %>% mutate(N = 1:nrow(df_index))
+M_shifted = apply_indent(df_test, cols_to_display = c('code', 'N'))
+kable(M_shifted, 'html')
+```
+
+
 # Operations on multiple codes
 ## Common graph
 The "common graph" merges the ancestors of each code in the list.
 ```{r common_graph}
-codes_list = c(303, 305, 595356)
+codes_list = c('303', '305', '595356')
 common_graph = get_common_graph(codes_list)
 plot(common_graph, layout=layout_tree)
-common_graph = get_common_graph(codes_list, colored=TRUE)
+common_graph = color_graph(common_graph, emphasize_nodes = codes_list)
 plot(common_graph, layout=layout_tree)
 ```
 
@@ -143,18 +156,23 @@ Setting *children_only* to TRUE will make the process much faster, but some "cou
 
 Setting *children_only* to FALSE will find every forgotten codes, but might last an eternity if an LCA is high in classification.
 ```{r relatives}
-new_graph = get_relatives(codes_list)
+new_graph = get_relatives(codes_list) %>% 
+  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
-new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
+
+new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']]) %>% 
+  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
-new_graph = get_relatives(codes_list, children_only = TRUE)
+
+new_graph = get_relatives(codes_list, children_only = TRUE) %>% 
+  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
 ```
 
 # Counting codes
 ```{r counting1}
 df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
-                         code = c(303, 158673, 595356, 305, 79406, 79406, 595356))
+                         code = c('303', '158673', '595356', '305', '79406', '79406', '595356'))
 kable(df_patients, 'html')
 ```
 

@@ -14,12 +14,11 @@ read_class = function(path, load=TRUE, save=TRUE)
   class_data = read_xml(path)
 
   # Find classification nodes
-  xpath = sprintf('//ClassificationNode')
-  classification_nodes = xml_find_all(class_data, xpath)
+  classification_nodes = xml_find_all(class_data, '//ClassificationNode')
   df_class = classification_nodes %>%
     lapply( function(class_node){
-      from = class_node %>% xml_find_first('Disorder/OrphaCode') %>% xml_text() %>% as.numeric()
-      to = class_node %>% xml_find_all('ClassificationNodeChildList/ClassificationNode/Disorder/OrphaCode') %>% xml_text() %>% as.numeric()
+      from = class_node %>% xml_find_first('Disorder/OrphaCode') %>% xml_text() # %>% as.numeric()
+      to = class_node %>% xml_find_all('ClassificationNodeChildList/ClassificationNode/Disorder/OrphaCode') %>% xml_text() # %>% as.numeric()
       df_temp = NULL
       if(length(to) != 0)
         df_temp = list(from=from, to=to)
@@ -76,8 +75,8 @@ load_classifications = function(load=TRUE, save=TRUE)
 #'
 #' @examples
 #' all_class = load_classifications()
-#' print(is_in_classif(303, all_class[[1]]))
-#' print(is_in_classif(303, all_class[[6]]))
+#' print(is_in_classif('303', all_class[[1]]))
+#' print(is_in_classif('303', all_class[[6]]))
 is_in_classif = function(orphaCode, class_data)
 {
   all_codes = unique(c(class_data$from, class_data$to))
@@ -97,8 +96,8 @@ is_in_classif = function(orphaCode, class_data)
 #' @export
 #'
 #' @examples
-#' edgelist = get_ancestors(303)
-#' graph = graph_from_data_frame(edgelist)
+#' edgelist = get_ancestors('303')
+#' graph = igraph::graph_from_data_frame(edgelist)
 #'
 #' roots = find_roots(edgelist)
 #' roots = find_roots(graph)
@@ -106,12 +105,12 @@ find_roots = function(X, first_only=FALSE)
 {
   # Roots are the only nodes having no arcs going in
   if('data.frame' %in% class(X))
-    leaves = setdiff(X$from, X$to)
+    roots = setdiff(X$from, X$to)
   else if(class(X)=='igraph')
   {
     D = degree(X, mode='in')
     D = D[D==0]
-    roots = names(D) %>% as.numeric()
+    roots = names(D) # %>% as.numeric()
   }
   if(first_only)
     return(roots[1])
@@ -131,8 +130,8 @@ find_roots = function(X, first_only=FALSE)
 #' @export
 #'
 #' @examples
-#' edgelist = get_descendants(303)
-#' graph = graph_from_data_frame(edgelist)
+#' edgelist = get_descendants('303')
+#' graph = igraph::graph_from_data_frame(edgelist)
 #'
 #' leaves = find_leaves(edgelist)
 #' leaves = find_leaves(graph)
@@ -145,7 +144,7 @@ find_leaves = function(X)
   {
     d = degree(X, mode='out')
     d = d[d==0]
-    leaves = names(d) %>% as.numeric()
+    leaves = names(d) # %>% as.numeric()
   }
   return(leaves)
 }
@@ -168,7 +167,7 @@ find_leaves = function(X)
 #' @export
 #'
 #' @examples
-#' code = 303
+#' code = '303'
 #' ancestors_codes = get_ancestors(code, codes_only=TRUE)
 #' df_ancestors = get_ancestors(code)
 #'
@@ -261,7 +260,7 @@ get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts
 #' @export
 #'
 #' @examples
-#' code = 303
+#' code = '303'
 #' descendants_codes = get_descendants(code, codes_only=TRUE)
 #' df_descendants = get_descendants(code)
 get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts=FALSE)
@@ -333,12 +332,12 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
 #' @param codes_list The codes to build the base graph from
 #' @param class_data The Orpha classification to consider to find the ancestors.
 #' If NULL, automatically search a classification for each code
-#' @param colored Color the graph nodes in green if they are mentionned in `codes_list`, else in red
 #' @param what Specify if you want 'acenstors', 'descendants' or 'both'
+#' @param shortcuts Add shortcuts when looking for ancestors and descendants
 #'
 #' @return The built base graph
 #' @import magrittr
-#' @importFrom igraph graph_from_data_frame as_data_frame set_vertex_attr V
+#' @importFrom igraph graph_from_data_frame as_data_frame
 #' @importFrom dplyr bind_rows distinct
 #' @importFrom stats na.omit
 #' @importFrom purrr keep is_empty
@@ -346,7 +345,7 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
 #'
 #' @examples
 #' all_class = load_classifications()
-#' codes_list = c(303, 305, 595356)
+#' codes_list = c('303', '305', '595356')
 #'
 #' common_graph = get_common_graph(codes_list)
 #' common_graph = get_common_graph(codes_list, colored=TRUE)
@@ -354,7 +353,7 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
 #' common_graph = get_common_graph(codes_list, what = 'ancestors')
 #' common_graph = get_common_graph(codes_list, shortcuts = TRUE)
 #'
-get_common_graph = function(codes_list, class_data=NULL, colored=FALSE, what='both', shortcuts=FALSE)
+get_common_graph = function(codes_list, class_data=NULL, what='both', shortcuts=FALSE)
 {
   if(what=='both')
     what = c('ancestors', 'descendants')
@@ -362,7 +361,9 @@ get_common_graph = function(codes_list, class_data=NULL, colored=FALSE, what='bo
   if('ancestors' %in% what)
   {
     df_ancestors_list = codes_list %>%
-      lapply(function(code) get_ancestors(code, class_data, shortcuts=shortcuts)) %>%
+      lapply(function(code) get_ancestors(code,
+                                          class_data,
+                                          shortcuts=shortcuts)) %>%
       keep(function(df) !is_empty(df))
     graph_ancestors = df_ancestors_list %>%
       lapply(graph_from_data_frame) %>%
@@ -378,7 +379,8 @@ get_common_graph = function(codes_list, class_data=NULL, colored=FALSE, what='bo
     for(current_code in codes_list)
     {
       if(is.null(graph_descendants) ||
-         !current_code %in% as.numeric(names(V(graph_descendants))))
+         # !current_code %in% as.numeric(names(V(graph_descendants))))
+         !current_code %in% names(V(graph_descendants)))
       {
         df_descendants = get_descendants(current_code,
                                          class_data,
@@ -393,13 +395,6 @@ get_common_graph = function(codes_list, class_data=NULL, colored=FALSE, what='bo
     graph_descendants = NULL
 
   graph = merge_graphs(graphs_list = list(graph_ancestors, graph_descendants))
-
-  if(colored)
-  {
-    nodes = V(graph) %>% names %>% as.numeric()
-    graph = set_vertex_attr(graph, 'color', index=nodes %in% codes_list, 'green')
-    graph = set_vertex_attr(graph, 'color', index=!nodes %in% codes_list, 'tomato')
-  }
 
   return(graph)
 }
@@ -421,7 +416,8 @@ get_common_graph = function(codes_list, class_data=NULL, colored=FALSE, what='bo
 #' @export
 #'
 #' @examples
-#' codes_list = c(303, 305, 595356)
+#' codes_list = c('303', '305', '595356')
+#' all_class = load_classifications()
 #'
 #' get_LCAs(codes_list)
 #' get_LCAs(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
@@ -437,13 +433,11 @@ get_LCAs = function(codes_list, class_data=NULL)
     else
       return(pathsPair[[1]][index])
   }
-
-  # codes_list = as.character(codes_list) # Convert codes into character vectors
   graph = get_common_graph(codes_list, class_data) %>% add_superNode()
 
   # Find all paths going from the root to the codes in the given list
   all_paths = codes_list %>%
-    as.character() %>%
+    # as.character() %>%
     lapply(function(current_to) all_simple_paths(graph, from='SuperNode', to=current_to) %>%
                                       lapply(function(path) path %>% names()))
 
@@ -461,7 +455,7 @@ get_LCAs = function(codes_list, class_data=NULL)
     sapply(function(path) path[[1]][1]) %>% names %>% unique() # Clean results
 
   # Remove ancestors to be discarded to keep LCAs only
-  LCAs = setdiff(LCAs, c(to_rem, 'SuperNode')) %>% as.numeric()
+  LCAs = setdiff(LCAs, c(to_rem, 'SuperNode')) # %>% as.numeric()
   return(LCAs)
 }
 
@@ -482,8 +476,8 @@ get_LCAs = function(codes_list, class_data=NULL)
 #' @export
 #'
 #' @examples
-#' codes_list = c(303, 305, 595356)
-#' get_lowest_groups(orphaCode = 158676)
+#' codes_list = c('303', '305', '595356')
+#' get_lowest_groups(orphaCode = '158676')
 get_lowest_groups = function(orphaCode, class_data=NULL)
 {
   keep_lowest_groups = function(code, df_ancestors)
@@ -520,14 +514,18 @@ get_lowest_groups = function(orphaCode, class_data=NULL)
   combs = expand.grid(group_ancestors, group_ancestors)
   to_rem = combs %>%
     apply(1, function(x) all_simple_paths(graph,
-                                          as.character(x[1]),
-                                          as.character(x[2]))) %>% # Try to find a path between two ancestors
+                                          # as.character(x[1]),
+                                          # as.character(x[2]))) %>% # Try to find a path between two ancestors
+                                          x[1],
+                                          x[2])) %>% # Try to find a path between two ancestors
     keep(function(path) length(path) > 0) %>% # If a path is found, ancestor is discarded
     sapply(function(path) path[[1]][1]) %>%
-    names %>% as.numeric() %>% unique() # Clean results
+    names %>%
+    # as.numeric() %>%
+    unique() # Clean results
 
   # Remove ancestors to be discarded to keep the lowest only
-  lowest_groups = setdiff(group_ancestors, to_rem) %>% as.numeric()
+  lowest_groups = setdiff(group_ancestors, to_rem) # %>% as.numeric()
   return(lowest_groups)
 }
 
@@ -545,8 +543,8 @@ get_lowest_groups = function(orphaCode, class_data=NULL)
 #' @export
 #'
 #' @examples
-#' subtype_to_disorder(subtypeCode = 158676) # 158676 is a subtype of disorder
-#' subtype_to_disorder(subtypeCode = 303) # 303 is a group of disorder
+#' subtype_to_disorder(subtypeCode = '158676') # 158676 is a subtype of disorder
+#' subtype_to_disorder(subtypeCode = '303') # 303 is a group of disorder
 subtype_to_disorder = function(subtypeCode, class_data=NULL)
 {
   # If no classification was specified, find one containing the given Orpha code
@@ -577,7 +575,6 @@ subtype_to_disorder = function(subtypeCode, class_data=NULL)
 #'
 #' @param codes_list The codes list to extend
 #' @param class_data The classification to consider
-#' @param colored If TRUE, nodes are colored with green for the given codes and with red for the codes found as relatives
 #' @param children_only If TRUE, no ancestors are searched and the given codes are considered as the graph roots.
 #' If FALSE, roots are the LCAs of the given codes. When the classification head is found as LCA, user may experiment calculation issues.
 #'
@@ -585,15 +582,17 @@ subtype_to_disorder = function(subtypeCode, class_data=NULL)
 #' @import magrittr
 #' @importFrom dplyr bind_rows group_by summarize
 #' @importFrom stats na.omit
-#' @importFrom igraph set_vertex_attr graph_from_data_frame
+#' @importFrom igraph graph_from_data_frame
 #' @export
 #'
 #' @examples
-#' codes_list = codes_list = c(303, 305, 595356)
+#' codes_list = codes_list = c('303', '305', '595356')
+#' all_class = load_classifications()
+#'
 #' new_graph = get_relatives(codes_list)
 #' new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
 #' new_graph = get_relatives(codes_list, children_only = TRUE)
-get_relatives = function(codes_list, class_data=NULL, colored=TRUE, children_only=FALSE)
+get_relatives = function(codes_list, class_data=NULL, children_only=FALSE)
 {
   # Find descendants from common ancestors or from the given codes
   if(children_only)
@@ -621,11 +620,7 @@ get_relatives = function(codes_list, class_data=NULL, colored=TRUE, children_onl
 
   # Build the associated graph and color it if necessary
   graph = graph_from_data_frame(df_edges, vertices = df_nodes)
-  if(colored)
-  {
-    graph = set_vertex_attr(graph, 'color', index=nodes %in% codes_list, 'green')
-    graph = set_vertex_attr(graph, 'color', index=!nodes %in% codes_list, 'tomato')
-  }
+
   return(graph)
 }
 
@@ -642,10 +637,14 @@ get_relatives = function(codes_list, class_data=NULL, colored=TRUE, children_onl
 #'
 #' @export
 #' @examples
-#' code = 303
+#' code = '303'
 #' df_descendants = get_descendants(code)
 #' df_ancestors = get_ancestors(code)
-#' merged_graph = merge_graphs(list(df_descendants, df_ancestors))
+#'
+#' graph_d = igraph::graph_from_data_frame(df_descendants)
+#' graph_a = igraph::graph_from_data_frame(df_ancestors)
+#'
+#' merged_graph = merge_graphs(list(graph_d, graph_a))
 merge_graphs = function(graphs_list)
 {
   graphs_list = graphs_list[!sapply(graphs_list, is.null)]

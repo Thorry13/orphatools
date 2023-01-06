@@ -19,6 +19,6 @@ Checks if a given Orpha code belongs to a given classification.
 }
 \examples{
 all_class = load_classifications()
-print(is_in_classif(303, all_class[[1]]))
-print(is_in_classif(303, all_class[[6]]))
+print(is_in_classif('303', all_class[[1]]))
+print(is_in_classif('303', all_class[[6]]))
 }

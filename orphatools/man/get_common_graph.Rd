@@ -7,7 +7,6 @@
 get_common_graph(
   codes_list,
   class_data = NULL,
-  colored = FALSE,
   what = "both",
   shortcuts = FALSE
 )
@@ -18,9 +17,9 @@ get_common_graph(
 \item{class_data}{The Orpha classification to consider to find the ancestors.
 If NULL, automatically search a classification for each code}
 
-\item{colored}{Color the graph nodes in green if they are mentionned in \code{codes_list}, else in red}
-
 \item{what}{Specify if you want 'acenstors', 'descendants' or 'both'}
+
+\item{shortcuts}{Add shortcuts when looking for ancestors and descendants}
 }
 \value{
 The built base graph
@@ -30,7 +29,7 @@ Get a base graph from a codes list, which is basically a graph including the rel
 }
 \examples{
 all_class = load_classifications()
-codes_list = c(303, 305, 595356)
+codes_list = c('303', '305', '595356')
 
 common_graph = get_common_graph(codes_list)
 common_graph = get_common_graph(codes_list, colored=TRUE)

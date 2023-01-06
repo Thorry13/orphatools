@@ -16,8 +16,12 @@ The merged graph
 Convert a list of graphs into a single merged graph
 }
 \examples{
-code = 303
+code = '303'
 df_descendants = get_descendants(code)
 df_ancestors = get_ancestors(code)
-merged_graph = merge_graphs(list(df_descendants, df_ancestors))
+
+graph_d = igraph::graph_from_data_frame(df_descendants)
+graph_a = igraph::graph_from_data_frame(df_ancestors)
+
+merged_graph = merge_graphs(list(graph_d, graph_a))
 }

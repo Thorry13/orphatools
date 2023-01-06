@@ -16,8 +16,8 @@ The leaves of the given graph as numeric codes
 Find the leaves of a given graph.
 }
 \examples{
-edgelist = get_descendants(303)
-graph = graph_from_data_frame(edgelist)
+edgelist = get_descendants('303')
+graph = igraph::graph_from_data_frame(edgelist)
 
 leaves = find_leaves(edgelist)
 leaves = find_leaves(graph)

@@ -1,6 +1,6 @@
 Package: orphatools
 Title: Tools to deal with the orpha classifications
-Version: 0.0.1.0
+Version: 0.0.1.2
 Authors@R: 
     person("Remy", "Dumas", , "remy.dumas@aphp.fr", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
@@ -17,6 +17,7 @@ Imports:
     kableExtra,
     magrittr,
     purrr,
+    stringr,
     tidyr,
     visNetwork,
     xml2

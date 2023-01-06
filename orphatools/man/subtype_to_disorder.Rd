@@ -19,6 +19,6 @@ The Orpha code of the associated disorder
 Find the associated disorder Orpha code for a given subtype code
 }
 \examples{
-subtype_to_disorder(subtypeCode = 158676) # 158676 is a subtype of disorder
-subtype_to_disorder(subtypeCode = 303) # 303 is a group of disorder
+subtype_to_disorder(subtypeCode = '158676') # 158676 is a subtype of disorder
+subtype_to_disorder(subtypeCode = '303') # 303 is a group of disorder
 }

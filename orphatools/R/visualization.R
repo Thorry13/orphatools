@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-#' df_ancestors = get_ancestors(303)
+#' df_ancestors = get_ancestors('303')
 #' graph = igraph::graph_from_data_frame(df_ancestors)
 #' plot(graph)
 #' plot(graph, layout=igraph::layout_as_tree)
@@ -35,8 +35,8 @@ layout_tree = function(graph, reverse_y=TRUE, factor=5)
     as.data.frame()
   df_nodes$y = df_nodes$node %>% sapply(function(node) df_edges %>%
                                           filter(to==node) %>%
-                                          select(depth) %>%
-                                          as.numeric())
+                                          select(depth) %>% as.numeric()
+                                        )
 
   # Reorder
   v = graph %>% as_data_frame(what='vertices')
@@ -119,7 +119,7 @@ horizontal_sizes = function(graph, root_node=NULL)
     else
     {
       children = df_edges %>% filter(from==root_node)
-      children = children$to %>% as.numeric()
+      children = children$to # %>% as.numeric()
       df_children_sizes = children %>%
         lapply(function(node) horizontal_sizes(graph, node)) %>%
         bind_rows()
@@ -143,7 +143,8 @@ horizontal_sizes = function(graph, root_node=NULL)
 #' @export
 #'
 #' @examples
-#' graph = get_descendants(68346)
+#' D = get_descendants('68346')
+#' graph = igraph::graph_from_data_frame(D)
 #' interactive_plot(graph)
 interactive_plot = function(graph)
 {
@@ -152,4 +153,126 @@ interactive_plot = function(graph)
                mutate(label=name) %>%
                rename(id=name),
              graph %>% as_data_frame(what='edges'))
+}
+
+
+#' Use ORPHA classification to build hierarchical style representation of a given ORPHA tree.
+#'
+#' @param df The given ORPHA tree. It is supposed to be a from/to data.frame object.
+#' @param current_code An ORPHA code to analyse the children from. Used for recursivity.
+#' @param current_index The index of the given ORPHA code. It will be expanded for each child. Used for recursivity.
+#'
+#' @import magrittr
+#' @importFrom dplyr filter pull bind_rows arrange
+#'
+#' @return A sorted data.frame containing ORPHA codes present in the given ORPHA tree and their associated index.
+#' This makes appear the hierarchical structure of the classification as one can see
+#' on www.orpha.net.
+#' @export
+#'
+#' @examples
+#' df = get_descendants('307711')
+#' df_index = assign_indent_index(df)
+assign_indent_index = function(df, current_code = NULL, current_index = '')
+{
+  # First check if recursivity just started or is about to finish.
+  if(is.null(current_code))
+    current_children = find_roots(df)
+  else if(current_code %in% find_leaves(df))
+    return(NULL)
+  else
+    current_children = df %>% filter(from == current_code) %>% pull(to)
+
+  # Compute index for each child (and their own children by recursivity) and compile results
+  N_children = length(current_children)
+  children_index = paste(current_index, 1:N_children %>% as.character(), sep='.')
+
+  df_index = lapply(1:N_children,
+                    function(i) assign_indent_index(df, current_children[i], children_index[i])) %>%
+    bind_rows() %>%
+    rbind(data.frame(code = current_children,
+                     index = children_index))
+
+  # Return the sorted data.frame
+  return(df_index %>% arrange(index))
+}
+
+
+#' Shift some rows (indentation) on the base of the given index to make some hierarchical structure appear.
+#'
+#' @param df A sorted data.frame with ORPHA codes and their corresponding index (see *assign_indent_index* function)
+#' @param cols_to_display The columns to keep and to shift
+#'
+#' @import magrittr
+#' @importFrom dplyr mutate
+#' @importFrom stringr str_count
+#'
+#' @return A matrix with the right indentations applied on the requested columns
+#' @export
+#'
+#' @examples
+#' df = get_descendants('307711')
+#' df_index = assign_indent_index(df)
+#' df_test = df_index
+#' df_test$N = 1:nrow(df_test)
+#' M_shifted = apply_indent(df_test, cols_to_display = c('code', 'N'))
+apply_indent = function(df, cols_to_display)
+{
+  df = df %>% mutate(n_indent = str_count(index, '\\.'))
+  M = matrix('', nrow = nrow(df), ncol = max(df$n_indent, na.rm = T) + length(cols_to_display) - 1)
+
+  for(i in 1:nrow(df))
+  {
+    j = df$n_indent[i]
+    M[i,j:(j+length(cols_to_display)-1)] = df[i,cols_to_display] %>% as.matrix()
+  }
+  return(M)
+}
+
+
+#' Color vertices of a graph to emphasize some specific nodes or make classification levels appear
+#'
+#' @param graph, The graph to color
+#' @param emphasize_nodes, List of codes to emphasize in the graph (red color).
+#' @param display_class_levels If TRUE, color vertex frames with the associated
+#' color (blue for groups, green for disorders and purple for subtypes)
+#'
+#' @import magrittr
+#' @importFrom dplyr bind_rows
+#' @importFrom igraph set_vertex_attr V
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' code = 303
+#' codes_list = c(303, 79361, 158676, 89843)
+#' graph = get_common_graph(code, what='both')
+#' graph = color_graph()
+#' graph = color_graph(emphasize_nodes = codes_list)
+#' graph = color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
+color_graph = function(graph, emphasize_nodes=NULL, display_class_levels=TRUE)
+{
+  if(!is.null(emphasize_nodes))
+  {
+    nodes = V(graph) %>% names
+    graph = set_vertex_attr(graph, 'label.color', index=nodes %in% emphasize_nodes, 'red3')
+    # graph = set_vertex_attr(graph, 'label.font', index=nodes %in% emphasize_nodes, 2)
+    # graph = set_vertex_attr(graph, 'frame.width', index=nodes %in% emphasize_nodes, 3)
+    graph = set_vertex_attr(graph, 'frame.color', index=nodes %in% emphasize_nodes, 'red')
+  }
+
+  if(display_class_levels)
+  {
+    nodes = V(graph) %>% names
+    props = nodes %>%
+      lapply(function(node) get_code_properties(node, literal_values = TRUE)) %>%
+      bind_rows()
+
+    graph = set_vertex_attr(graph, 'color', index=props$classLevel == 'Group', 'royalblue1')
+    graph = set_vertex_attr(graph, 'color', index=props$classLevel == 'Disorder', 'palegreen3')
+    graph = set_vertex_attr(graph, 'color', index=props$classLevel == 'Subtype', 'plum3')
+  }
+
+  return(graph)
 }

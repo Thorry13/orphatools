@@ -20,7 +20,7 @@ An adapted layout to plot nodes from Orpha classifications
 Calculate nodes position for a fancy layout
 }
 \examples{
-df_ancestors = get_ancestors(303)
+df_ancestors = get_ancestors('303')
 graph = igraph::graph_from_data_frame(df_ancestors)
 plot(graph)
 plot(graph, layout=igraph::layout_as_tree)

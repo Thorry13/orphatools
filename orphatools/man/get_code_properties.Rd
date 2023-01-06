@@ -4,12 +4,15 @@
 \alias{get_code_properties}
 \title{Find properties related to a given Orpha code}
 \usage{
-get_code_properties(orphaCode, nom_data = NULL)
+get_code_properties(orphaCode, nom_data = NULL, literal_values = FALSE)
 }
 \arguments{
 \item{orphaCode}{The Orpha code to consider}
 
-\item{nom_data}{The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.
+\item{nom_data}{The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.}
+
+\item{litteral_values}{If TRUE, returned values are human readable.
+
 It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.}
 }
 \value{
@@ -19,9 +22,11 @@ The properties (flag value, disorder type, classification level) associated to t
 Find properties related to a given Orpha code
 }
 \examples{
-code = 303
+code = '303'
 props = get_code_properties(code)
 
 nom_data = load_nomenclature()
 props = get_code_properties(code, nom_data = nom_data)
+
+props = get_code_properties(code, nom_data = nom_data, litteral_values = TRUE)
 }

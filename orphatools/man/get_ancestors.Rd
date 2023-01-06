@@ -27,7 +27,7 @@ A from/to data.frame ready to be converted into a graph, or codes only if asked 
 Find all ancestors of a given Orpha code as it is in the Orphanet classification data
 }
 \examples{
-code = 303
+code = '303'
 ancestors_codes = get_ancestors(code, codes_only=TRUE)
 df_ancestors = get_ancestors(code)
 

@@ -20,6 +20,6 @@ The lowest group containing the code, or the code itself if it is a group of dis
 Analyze ancestors to find the lowest group containing the given code
 }
 \examples{
-codes_list = c(303, 305, 595356)
-get_lowest_groups(orphaCode = 158676)
+codes_list = c('303', '305', '595356')
+get_lowest_groups(orphaCode = '158676')
 }

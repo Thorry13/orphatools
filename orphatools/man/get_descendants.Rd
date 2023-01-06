@@ -32,7 +32,7 @@ A from/to data.frame ready to be converted into a graph, or codes only if asked 
 Get descendants recusevily from a given Orpha code
 }
 \examples{
-code = 303
+code = '303'
 descendants_codes = get_descendants(code, codes_only=TRUE)
 df_descendants = get_descendants(code)
 }
