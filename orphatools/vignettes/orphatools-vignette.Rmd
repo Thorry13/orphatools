@@ -65,7 +65,6 @@ print(ancestors_codes)
 df_ancestors = get_ancestors(code)
 kable(df_ancestors, 'html')
 ```
-Depth was calculated for displaying purpose.
 
 ### Specify classification
 **Classifications list :**
@@ -81,7 +80,7 @@ kable(df_ancestors, 'html')
 df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
 kable(df_ancestors, 'html')
 ```
-/
+
 
 # Descendants
 ## Find descendants codes
@@ -95,7 +94,6 @@ print(descendants_codes)
 df_descendants = get_descendants(code)
 kable(df_descendants, 'html')
 ```
-Depth was calculated for displaying purpose.
 
 ### Specify classification
 Specifying classification won't change the output but will just save a small amount of time.
@@ -103,9 +101,31 @@ Specifying classification won't change the output but will just save a small amo
 df_descendants = get_descendants(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
 kable(df_descendants, 'html')
 df_descendants = get_descendants(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
-kable(df_ancestors, 'html')
+kable(df_descendants, 'html')
 ```
-/
+
+# Siblings
+## Find siblings codes
+```{r siblings1}
+code = 79361
+siblings_codes = get_siblings(code, codes_only=TRUE)
+print(siblings_codes)
+```
+
+## Build edgelist
+```{r siblings2}
+df_siblings = get_siblings(code)
+kable(df_siblings, 'html')
+```
+
+## Specify classification
+```{r}
+df_siblings = get_siblings(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
+kable(df_siblings, 'html')
+df_siblings = get_siblings(code, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
+kable(df_siblings, 'html')
+```
+
 
 # Visualization
 ## Plots
@@ -134,14 +154,33 @@ kable(M_shifted, 'html')
 
 # Operations on multiple codes
 ## Common graph
-The "common graph" merges the ancestors of each code in the list.
+The "common graph" merges the ancestors and/or descendants of each code in the list.
 ```{r common_graph}
 codes_list = c('303', '305', '595356')
-common_graph = get_common_graph(codes_list)
+common_graph = get_common_graph(codes_list) # both
 plot(common_graph, layout=layout_tree)
-common_graph = color_graph(common_graph, emphasize_nodes = codes_list)
+common_graph = get_common_graph(codes_list, what = 'ancestors')
+plot(common_graph, layout=layout_tree)
+common_graph = get_common_graph(codes_list, what = 'descendants')
 plot(common_graph, layout=layout_tree)
 ```
+
+You can emphasize codes on the plotted graph to locate where are the original codes
+with `color_graph` function.
+`color_graph` enables also the visualization of the classification 
+level (Group of disorders, Disorder, Subtype of disorder) on the plotted graph.
+
+```{r}
+colored_graph = color_graph(common_graph, 
+                            emphasize_nodes = codes_list,
+                            display_class_levels = FALSE)
+plot(colored_graph, layout=layout_tree)
+
+colored_graph = color_graph(common_graph, 
+                            emphasize_nodes = codes_list)
+plot(colored_graph, layout=layout_tree)
+```
+
 
 ## Lowest Common Ancestors (LCAs)
 ```{r lcas}
@@ -149,22 +188,15 @@ get_LCAs(codes_list)
 get_LCAs(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
 ```
 
-## Find other relatives
+## Complete families
 This function is useful to find codes that might have been forgotten.
 
-Setting *children_only* to TRUE will make the process much faster, but some "cousin codes" may be missed.
-
-Setting *children_only* to FALSE will find every forgotten codes, but might last an eternity if an LCA is high in classification.
 ```{r relatives}
-new_graph = get_relatives(codes_list) %>% 
+new_graph = complete_family(codes_list) %>% 
   color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
 
-new_graph = get_relatives(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']]) %>% 
-  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
-plot(new_graph, layout=layout_tree)
-
-new_graph = get_relatives(codes_list, children_only = TRUE) %>% 
+new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']]) %>% 
   color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
 ```

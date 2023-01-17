@@ -11,7 +11,7 @@ get_code_properties(orphaCode, nom_data = NULL, literal_values = FALSE)
 
 \item{nom_data}{The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.}
 
-\item{litteral_values}{If TRUE, returned values are human readable.
+\item{literal_values}{If TRUE, returned values are human readable.
 
 It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.}
 }
@@ -28,5 +28,5 @@ props = get_code_properties(code)
 nom_data = load_nomenclature()
 props = get_code_properties(code, nom_data = nom_data)
 
-props = get_code_properties(code, nom_data = nom_data, litteral_values = TRUE)
+props = get_code_properties(code, nom_data = nom_data, literal_values = TRUE)
 }

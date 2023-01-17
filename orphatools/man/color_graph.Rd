@@ -24,7 +24,7 @@ Color vertices of a graph to emphasize some specific nodes or make classificatio
 code = 303
 codes_list = c(303, 79361, 158676, 89843)
 graph = get_common_graph(code, what='both')
-graph = color_graph()
-graph = color_graph(emphasize_nodes = codes_list)
-graph = color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
+graph = color_graph(graph)
+graph = color_graph(graph, emphasize_nodes = codes_list)
+graph = color_graph(graph, emphasize_nodes = codes_list, display_class_levels = FALSE)
 }

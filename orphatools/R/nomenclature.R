@@ -40,7 +40,7 @@ load_nomenclature = function()
 #'
 #' @param orphaCode The Orpha code to consider
 #' @param nom_data The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.
-#' @param litteral_values If TRUE, returned values are human readable.
+#' @param literal_values If TRUE, returned values are human readable.
 #'
 #' It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.
 #'
@@ -56,7 +56,7 @@ load_nomenclature = function()
 #' nom_data = load_nomenclature()
 #' props = get_code_properties(code, nom_data = nom_data)
 #'
-#' props = get_code_properties(code, nom_data = nom_data, litteral_values = TRUE)
+#' props = get_code_properties(code, nom_data = nom_data, literal_values = TRUE)
 get_code_properties = function(orphaCode, nom_data=NULL, literal_values=FALSE)
 {
   # Load nomenclature if necessary

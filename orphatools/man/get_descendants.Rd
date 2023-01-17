@@ -7,6 +7,7 @@
 get_descendants(
   orphaCode,
   class_data = NULL,
+  gen = Inf,
   codes_only = FALSE,
   shortcuts = FALSE
 )
@@ -16,12 +17,9 @@ get_descendants(
 
 \item{class_data}{The classification data to consider. If NULL, find one automatically. Descendance is independant from classification.}
 
-\item{codes_only}{If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph
-\itemize{
-\item edge_from_leaves : The leaves (last descendants) also belong to the "from" column
-\item depth : Depth information to transmit and increment recursevily
-\item return_depth : Return depth for each edge in the final data.frame
-}}
+\item{gen}{Number of generations to take into account. If Inf, the default, all generations are included.}
+
+\item{codes_only}{If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph}
 
 \item{shortcuts}{(default FALSE) if TRUE, add an edge from the given Orpha code to every found descendants}
 }

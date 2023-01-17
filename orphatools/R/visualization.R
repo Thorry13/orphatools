@@ -6,7 +6,7 @@
 #'
 #' @return An adapted layout to plot nodes from Orpha classifications
 #' @import magrittr
-#' @importFrom dplyr group_by summarize filter select
+#' @importFrom dplyr group_by summarize filter select full_join n_distinct
 #' @importFrom igraph as_data_frame
 #' @export
 #'
@@ -20,113 +20,225 @@ layout_tree = function(graph, reverse_y=TRUE, factor=5)
 {
   options(dplyr.summarise.inform=F)
 
-  # X positions
-  h_size = horizontal_sizes(graph)
-  df_nodes = horizontal_positions(graph, h_size)
-
   # Y positions
-  root_nodes = find_roots(graph)
-  df_edges = as_data_frame(graph, what='edges')
-  df_edges = rbind(data.frame(from='SuperNode', to=root_nodes, depth=min(df_edges$depth)-1),
-                   df_edges)
-  df_edges = df_edges %>%
-    group_by(to) %>% summarize(from=from[which.max(depth)],
-                               depth=depth[which.max(depth)]) %>%
-    as.data.frame()
-  df_nodes$y = df_nodes$node %>% sapply(function(node) df_edges %>%
-                                          filter(to==node) %>%
-                                          select(depth) %>% as.numeric()
-                                        )
+  df_y = vertical_positions(graph)
+  df_y$y = (-1)^reverse_y * df_y$y
+
+  # X positions
+  h_size = horizontal_sizes(graph, df_y)
+  df_x = horizontal_positions(graph, df_y, h_size)
+
+  df_nodes = full_join(df_x, df_y, by='name')
+  if(n_distinct(df_nodes$x) > 1)
+    df_nodes$x = scale(df_nodes$x)*factor
+  # if(n_distinct(df_nodes$y) > 1)
+  #   df_nodes$y = scale(df_nodes$y)*factor
 
   # Reorder
   v = graph %>% as_data_frame(what='vertices')
-  df_nodes = df_nodes[match(v$name, df_nodes$node),c('x','y')]
-
-  df_nodes$y = (-1)^reverse_y * df_nodes$y
-
-  df_nodes$x = scale(df_nodes$x)*factor
-  df_nodes$y = scale(df_nodes$y)*factor
+  df_nodes = df_nodes[match(v$name, df_nodes$name),c('x','y')]
 
   return(df_nodes %>% as.matrix())
 }
 
-horizontal_positions = function(graph, h_size, root_node=NULL)
+#' Calculate vertical coordinates for each node of the given graph
+#'
+#' @param graph The graph from which nodes positions (y axis) will be calculated
+#'
+#' @import magrittr
+#' @importFrom dplyr filter pull
+#' @importFrom igraph as_data_frame
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' df_edges = data.frame(from=c('A', 'B', 'C'), to = c('B', 'C', 'D'), depth = c(-3,-2,-1))
+#' g = igraph::graph_from_data_frame(df_edges)
+#' df_y = vertical_positions(g)
+vertical_positions = function(graph)
+{
+  # Initialization
+  df_nodes = as_data_frame(graph, what = 'vertices')
+  df_edges = as_data_frame(graph, what = 'edges')
+
+  df_y = data.frame(name = unique(df_nodes$name),
+                    y = as.numeric(NA))
+  i = 1
+  # leaves = find_leaves(df_edges)
+  roots = find_roots(df_edges)
+  df_y$y[df_y$name %in% roots] = i
+
+  # Calculate depth
+  current_nodes = df_edges %>%
+    filter(from %in% roots) %>%
+    pull(to)
+  while(length(current_nodes))
+  {
+    i = i+1
+    df_y$y[df_y$name %in% current_nodes] = i
+    current_nodes = df_edges %>%
+      filter(from %in% current_nodes) %>%
+      pull(to)
+  }
+
+  return(df_y)
+}
+
+
+#' Calculate horizontal coordinates for each node of the given graph
+#'
+#' @param graph The graph from which nodes positions (x axis) will be calculated
+#' @param df_y Y coordinates which are useful to simplify the graph
+#' @param h_size Horizontal widths at each graph level are needed to compute X positions
+#' @param root_node `root_node` is the reference to calculate the X coordinates of
+#' its children. It is a dataframe with a name and a relative_position columns. If NULL,
+#' it considers a SuperNode above the graph roots with relative_position=0.
+#'
+#' @import magrittr
+#' @importFrom dplyr left_join group_by summarize bind_rows
+#' @importFrom igraph as_data_frame graph_from_data_frame
+#'
+#' @return
+#' @export
+#'
+#' @examples
+horizontal_positions = function(graph, df_y, h_size, root_node=NULL)
 {
   if(is.null(root_node))
   {
     root_nodes = find_roots(graph)
-    df_edges = igraph::as_data_frame(graph, what='edges')
-    df_edges = rbind(data.frame(from='SuperNode', to=root_nodes, depth=0),
-                     df_edges)
-    h_size = rbind(data.frame(node='SuperNode', size=sum(h_size$size[h_size$node %in% root_nodes])),
-                   h_size)
-    ext_graph = graph_from_data_frame(df_edges)
+
+    # Add SuperNode on top
+    df_edges = as_data_frame(graph, what='edges')
+    df_edges = bind_rows(data.frame(from='SuperNode',
+                                    to=root_nodes),
+                         df_edges) %>%
+      left_join(df_y, by=c('to'='name')) %>%
+      group_by(to) %>%
+      summarize(from=from[which.max(y)]) %>%
+      as.data.frame()
+    h_size = bind_rows(data.frame(name='SuperNode',
+                                  size=sum(h_size$size[h_size$name %in% root_nodes])),
+                       h_size)
+    ext_graph = graph_from_data_frame(df_edges[,c('from', 'to')])
+
+    # Recursively calculate X positions of each node of the graph
+    # SuperNode is supposed to be centered
     df_x = horizontal_positions(ext_graph,
+                                df_y,
                                 h_size,
                                 root_node=list(name='SuperNode',
                                                relative_position=0))
-    df_x = df_x[2:nrow(df_x),] # Remove "SuperNode" line
+    # Remove "SuperNode" line
+    df_x = df_x[2:nrow(df_x),]
+
     return(df_x)
   }
   else
   {
-    df_edges = igraph::as_data_frame(graph, what='edges') %>%
-      group_by(to) %>% summarize(from=from[which.max(depth)]) %>%
-      as.data.frame()
+    # Get edges
+    df_edges = as_data_frame(graph, what='edges')
+
+    # Check if current node is a leaf
     if(!root_node$name %in% df_edges$from)
     {
-      return(data.frame(node=root_node$name, x=root_node$relative_position))
+      return(data.frame(name=root_node$name,
+                        x=root_node$relative_position))
     }
     else
     {
+      # Find children of the current node
       children = df_edges %>% filter(from==root_node$name)
       N = length(children$to)
-      children_sizes = h_size$size[match(children$to, h_size$node)]
-      root_size = h_size$size[h_size$node==root_node$name]
-      children_relative_pos = root_node$relative_position - (root_size+children_sizes)/2 + cumsum(children_sizes)
+
+      # Get their sizes
+      children_sizes = h_size$size[match(children$to, h_size$name)]
+      root_size = h_size$size[h_size$name==root_node$name]
+
+      # Calculate X position of the current node
+      children_relative_pos =
+        root_node$relative_position -
+        (root_size+children_sizes)/2 +
+        cumsum(children_sizes)
+
+      # Recursively calculate positions of descendant nodes
       df_children_pos = 1:N %>%
         lapply(function(i) horizontal_positions(graph,
+                                                df_y,
                                                 h_size,
                                                 root_node=list(name=children$to[i],
                                                                relative_position=children_relative_pos[i]))) %>%
         bind_rows()
-      return(rbind(data.frame(node=root_node$name, x=root_node$relative_position), df_children_pos))
+
+      return(rbind(data.frame(name=root_node$name,
+                              x=root_node$relative_position),
+                   df_children_pos))
     }
   }
 }
 
-horizontal_sizes = function(graph, root_node=NULL)
+#' Compute how large should be the graph at each depth
+#'
+#' @param graph The graph from which nodes positions (x axis) will be calculated
+#' @param df_y Y coordinates which are useful to simplify the graph
+#' @param root_node `root_node` is the reference to calculate the X coordinates of
+#' its children. It is a dataframe with a name and a relative_position columns. If NULL,
+#' it appplies the function recursively on each root of the graph.
+#'
+#' @import magrittr
+#' @importFrom dplyr left_join group_by summarize bind_rows filter select
+#' @importFrom igraph as_data_frame
+#'
+
+#' @return
+#'
+#' @examples
+horizontal_sizes = function(graph, df_y, root_node=NULL)
 {
+  # if no root_node is provided, take roots of the graph instead
   if(is.null(root_node))
   {
     root_nodes = find_roots(graph)
     sizes = root_nodes %>%
-      lapply(function(node) horizontal_sizes(graph, node)) %>%
+      lapply(function(node) horizontal_sizes(graph, df_y, node)) %>%
       bind_rows()
     return(sizes)
   }
   else
   {
+    # Remove some edges to keep a descendant architecture
     df_edges = igraph::as_data_frame(graph, what='edges') %>%
-      group_by(to) %>% summarize(from=from[which.max(depth)]) %>%
+      left_join(df_y, by=c('to'='name')) %>%
+      group_by(to) %>%
+      summarize(from=from[which.max(y)]) %>%
       as.data.frame()
+
     df_nodes = igraph::as_data_frame(graph, what='vertices')
 
+    # Provided root_node may be a leaf of the graph
     if(!root_node %in% df_edges$from)
     {
-      return(data.frame(node=root_node, size=1))
+      return(data.frame(name=root_node, size=1))
     }
     else
     {
-      children = df_edges %>% filter(from==root_node)
-      children = children$to # %>% as.numeric()
+      # Apply the function recursively on each child
+      children = df_edges %>%
+        filter(from==root_node) %>%
+        pull(to)
       df_children_sizes = children %>%
-        lapply(function(node) horizontal_sizes(graph, node)) %>%
+        lapply(function(node) horizontal_sizes(graph, df_y, node)) %>%
         bind_rows()
+
+      # Once children sizes are known, root_size can be calculated
       root_size = df_children_sizes %>%
-        filter(node %in% children) %>%
-        select(size) %>% sum()
-      return(rbind(data.frame(node=root_node, size=root_size), df_children_sizes))
+        filter(name %in% children) %>%
+        select(size) %>%
+        sum()
+      return(rbind(data.frame(name=root_node,
+                              size=root_size),
+                   df_children_sizes))
     }
   }
 }
@@ -248,9 +360,9 @@ apply_indent = function(df, cols_to_display)
 #' code = 303
 #' codes_list = c(303, 79361, 158676, 89843)
 #' graph = get_common_graph(code, what='both')
-#' graph = color_graph()
-#' graph = color_graph(emphasize_nodes = codes_list)
-#' graph = color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
+#' graph = color_graph(graph)
+#' graph = color_graph(graph, emphasize_nodes = codes_list)
+#' graph = color_graph(graph, emphasize_nodes = codes_list, display_class_levels = FALSE)
 color_graph = function(graph, emphasize_nodes=NULL, display_class_levels=TRUE)
 {
   if(!is.null(emphasize_nodes))
