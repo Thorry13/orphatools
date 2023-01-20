@@ -44,7 +44,7 @@ load_nomenclature = function()
 #'
 #' It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.
 #'
-#' @return The properties (flag value, disorder type, classification level) associated to the given Orpha code
+#' @return The properties (name, flag value, disorder type, classification level) associated to the given Orpha code
 #' @import magrittr
 #' @importFrom xml2 xml_find_first xml_child xml_text xml_attr
 #' @export
@@ -64,7 +64,7 @@ get_code_properties = function(orphaCode, nom_data=NULL, literal_values=FALSE)
     nom_data = load_nomenclature()
 
   # Get disorder node
-  node = xml_find_first(nom_data, sprintf('//Disorder[OrphaCode=%s]', orphaCode))
+  node = xml_find_first(nom_data, sprintf('DisorderList/Disorder[OrphaCode=%s]', orphaCode))
 
   # Retrieve properties
   flagValue = node %>% xml_child('FlagValue') %>% xml_text() # Active / Inactive
@@ -89,6 +89,33 @@ get_code_properties = function(orphaCode, nom_data=NULL, literal_values=FALSE)
   return(props)
 }
 
+
+#' Find the disorder name related to a given Orpha code
+#'
+#' @param orphaCode The Orpha code to consider
+#' @param nom_data The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.
+#'
+#' @return The disorder name related to the given orphaCode
+#' @export
+#'
+#' @examples
+#' orphaCode = '303'
+#' nom_data = load_nomenclature()
+#' disorderName = get_disorder_name(orphaCode, nom_data=nom_data)
+get_disorder_name = function(orphaCode, nom_data=NULL)
+{
+  # Load nomenclature if necessary
+  if(is.null(nom_data))
+    nom_data = load_nomenclature()
+
+  # Get disorder node
+  node = xml_find_first(nom_data, sprintf('DisorderList/Disorder[OrphaCode=%s]', orphaCode))
+
+  # Retrieve name
+  name = node %>% xml_child('Name') %>% xml_text()
+
+  return(name)
+}
 
 #' Generate and load an OrphaCode -> Classification Level table
 #'

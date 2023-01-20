@@ -16,7 +16,7 @@ get_code_properties(orphaCode, nom_data = NULL, literal_values = FALSE)
 It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.}
 }
 \value{
-The properties (flag value, disorder type, classification level) associated to the given Orpha code
+The properties (name, flag value, disorder type, classification level) associated to the given Orpha code
 }
 \description{
 Find properties related to a given Orpha code
