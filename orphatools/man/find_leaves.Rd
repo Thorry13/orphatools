@@ -4,10 +4,10 @@
 \alias{find_leaves}
 \title{Find the leaves of a given graph.}
 \usage{
-find_leaves(X)
+find_leaves(graph)
 }
 \arguments{
-\item{X}{The graph (igraph object or edgelist as a dataframe) to find the leaves from}
+\item{graph}{The graph (igraph object) to find the leaves from}
 }
 \value{
 The leaves of the given graph as numeric codes
@@ -18,7 +18,6 @@ Find the leaves of a given graph.
 \examples{
 edgelist = get_descendants('303')
 graph = igraph::graph_from_data_frame(edgelist)
-
-leaves = find_leaves(edgelist)
 leaves = find_leaves(graph)
+
 }

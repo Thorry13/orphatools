@@ -1,6 +1,6 @@
 Package: orphatools
 Title: Tools to deal with the Orpha classifications
-Version: 0.0.2.1
+Version: 0.0.2.6
 Authors@R: 
     person("Remy", "Dumas", , "remy.dumas@aphp.fr", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))

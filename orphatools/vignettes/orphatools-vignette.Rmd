@@ -23,39 +23,33 @@ suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 
 
 # Orpha code properties
-**Classification Levels** :
+**Classification Levels reminder** :
 
   * Group of disorders : 36540
   * Disorder : 36547
   * Subtype of disorder : 36554
 
-```{r props1}
-code = '303' # Dystrophic epidermolysis bullosa
-props = get_code_properties(code)
-kable(props, 'html')
 
-props = get_code_properties(code, literal_values = TRUE)
-kable(props, 'html')
-```
-It is however recommended to load the nomenclature data first to avoid memory overflow when `get_code_properties` is called multiple times.
-
-```{r props2}
+```{r props}
 nom_data = load_nomenclature()
-props = get_code_properties(code, nom_data = nom_data)
-kable(props, 'html')
+kable(head(nom_data), 'html')
+
+nom_data = translate_properties(nom_data)
+kable(head(nom_data), 'html')
 ```
 
 # Find corresponding disorder / lowest groups of disorders
 ```{r rolling_up}
-subtype_to_disorder(subtypeCode = 158676) # 158676 is a subtype of disorder
-subtype_to_disorder(subtypeCode = 303) # 303 is a group of disorder
-get_lowest_groups(orphaCode = 158676)
+subtype_to_disorder(subtypeCode = '158676') # 158676 is a subtype of disorder
+subtype_to_disorder(subtypeCode = '303') # 303 is a group of disorder
+get_lowest_groups(orphaCode = '158676')
 ```
 
 
 # Ancestors
 ## Find ancestors codes
 ```{r ancestors1}
+code = '303'
 ancestors_codes = get_ancestors(code, codes_only=TRUE)
 print(ancestors_codes)
 ```
@@ -107,7 +101,7 @@ kable(df_descendants, 'html')
 # Siblings
 ## Find siblings codes
 ```{r siblings1}
-code = 79361
+code = '79361'
 siblings_codes = get_siblings(code, codes_only=TRUE)
 print(siblings_codes)
 ```
@@ -141,7 +135,7 @@ Try `interactive_plot` function for a dynamic plot.
 
 ## Hierarchical structures
 ```{r visu2}
-df = get_descendants(307711)
+df = get_descendants('307711')
 graph = igraph::graph_from_data_frame(df)
 plot(graph)
 

@@ -65,8 +65,7 @@ vertical_positions = function(graph)
   df_y = data.frame(name = unique(df_nodes$name),
                     y = as.numeric(NA))
   i = 1
-  # leaves = find_leaves(df_edges)
-  roots = find_roots(df_edges)
+  roots = find_roots(graph)
   df_y$y[df_y$name %in% roots] = i
 
   # Calculate depth
@@ -247,6 +246,7 @@ horizontal_sizes = function(graph, df_y, root_node=NULL)
 #' This function was designed for a better visualization of large graphs.
 #'
 #' @param graph An igraph object to visualize
+#' @param layout_tree if TRUE, use the layout function above to set initial nodes position
 #'
 #' @import magrittr
 #' @import visNetwork
@@ -258,13 +258,39 @@ horizontal_sizes = function(graph, df_y, root_node=NULL)
 #' D = get_descendants('68346')
 #' graph = igraph::graph_from_data_frame(D)
 #' interactive_plot(graph)
-interactive_plot = function(graph)
+interactive_plot = function(graph, layout_tree = FALSE)
 {
-  visNetwork(graph %>%
-               as_data_frame(what='vertices') %>%
-               mutate(label=name) %>%
-               rename(id=name),
-             graph %>% as_data_frame(what='edges'))
+  df_nodes = graph %>%
+    as_data_frame(what='vertices') %>%
+    rename(id=name)
+
+  # Rename color parameters if they are provided
+  if(all(c('color', 'frame.color', 'label.color') %in%
+                names(df_nodes))){
+  df_nodes = df_nodes %>%
+    mutate(label=id,
+           color.background = color,
+           color.highlight = color,
+           color.border = ifelse(
+             is.na(frame.color),
+             color,
+             frame.color
+             ),
+           font.color = label.color) %>%
+    select(-color)
+  }
+
+  df_edges = graph %>% as_data_frame(what='edges')
+
+  vis = visNetwork(df_nodes, df_edges) %>%
+    visEdges(arrows = "to",
+             color = '#848484',
+             width = 2)
+
+  if(layout_tree)
+    vis = vis %>% visIgraphLayout(layout = 'layout_tree', reverse_y = FALSE)
+
+  return(vis)
 }
 
 
@@ -276,6 +302,7 @@ interactive_plot = function(graph)
 #'
 #' @import magrittr
 #' @importFrom dplyr filter pull bind_rows arrange
+#' @importFrom igraph graph_from_data_frame
 #'
 #' @return A sorted data.frame containing ORPHA codes present in the given ORPHA tree and their associated index.
 #' This makes appear the hierarchical structure of the classification as one can see
@@ -288,9 +315,10 @@ interactive_plot = function(graph)
 assign_indent_index = function(df, current_code = NULL, current_index = '')
 {
   # First check if recursivity just started or is about to finish.
+  graph = graph_from_data_frame(df)
   if(is.null(current_code))
-    current_children = find_roots(df)
-  else if(current_code %in% find_leaves(df))
+    current_children = find_roots(graph)
+  else if(current_code %in% find_leaves(graph))
     return(NULL)
   else
     current_children = df %>% filter(from == current_code) %>% pull(to)
@@ -368,23 +396,23 @@ color_graph = function(graph, emphasize_nodes=NULL, display_class_levels=TRUE)
   if(!is.null(emphasize_nodes))
   {
     nodes = V(graph) %>% names
-    graph = set_vertex_attr(graph, 'label.color', index=nodes %in% emphasize_nodes, 'red3')
-    # graph = set_vertex_attr(graph, 'label.font', index=nodes %in% emphasize_nodes, 2)
-    # graph = set_vertex_attr(graph, 'frame.width', index=nodes %in% emphasize_nodes, 3)
-    graph = set_vertex_attr(graph, 'frame.color', index=nodes %in% emphasize_nodes, 'red')
+    graph = set_vertex_attr(graph, 'label.color', index=nodes %in% emphasize_nodes, '#CD0000') # red3
+    graph = set_vertex_attr(graph, 'frame.color', index=nodes %in% emphasize_nodes, '#FF0000') # red
   }
 
   if(display_class_levels)
   {
-    nodes = V(graph) %>% names
-    class_levels = load_class_levels()
-    codes_index = match(nodes, class_levels$orphaCode)
-    classLevel_codif = class_levels$classLevel[codes_index]
-    classLevel = translate_class_level(classLevel_codif)
+    # Find associated properties
+    nom_data = load_nomenclature() %>%
+      translate_properties()
+    class_levels = data.frame(orphaCode = V(graph) %>% names) %>%
+      left_join(nom_data, by='orphaCode') %>%
+      pull(classLevel)
 
-    graph = set_vertex_attr(graph, 'color', index=classLevel == 'Group', 'royalblue1')
-    graph = set_vertex_attr(graph, 'color', index=classLevel == 'Disorder', 'palegreen3')
-    graph = set_vertex_attr(graph, 'color', index=classLevel == 'Subtype', 'plum3')
+    # Color nodes
+    graph = set_vertex_attr(graph, 'color', index=class_levels == 'Group', '#4169E1') # royalblue1
+    graph = set_vertex_attr(graph, 'color', index=class_levels == 'Disorder', '#7CCD7C') # palegreen3
+    graph = set_vertex_attr(graph, 'color', index=class_levels == 'Subtype', '#CD96CD') # plum3
   }
 
   return(graph)

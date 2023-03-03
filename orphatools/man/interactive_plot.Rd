@@ -4,10 +4,12 @@
 \alias{interactive_plot}
 \title{This function was designed for a better visualization of large graphs.}
 \usage{
-interactive_plot(graph)
+interactive_plot(graph, layout_tree = FALSE)
 }
 \arguments{
 \item{graph}{An igraph object to visualize}
+
+\item{layout_tree}{if TRUE, use the layout function above to set initial nodes position}
 }
 \description{
 This function was designed for a better visualization of large graphs.

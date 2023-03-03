@@ -4,10 +4,10 @@
 \alias{find_roots}
 \title{Find the root or the roots of a given graph.}
 \usage{
-find_roots(X, first_only = FALSE)
+find_roots(graph, first_only = FALSE)
 }
 \arguments{
-\item{X}{The graph (igraph object or edgelist as a dataframe) to find the roots from}
+\item{graph}{The graph (igraph object) to find the roots from}
 
 \item{first_only}{If TRUE, return one root only}
 }
@@ -20,7 +20,6 @@ Find the root or the roots of a given graph.
 \examples{
 edgelist = get_ancestors('303')
 graph = igraph::graph_from_data_frame(edgelist)
-
-roots = find_roots(edgelist)
 roots = find_roots(graph)
+
 }

@@ -2,13 +2,24 @@
 % Please edit documentation in R/nomenclature.R
 \name{load_nomenclature}
 \alias{load_nomenclature}
-\title{Load the nomenclature file given in the Orphanet nomenclature pack}
+\title{Load the nomenclature file given in the Orphanet nomenclature pack,
+then process it to make it more R-friendly.}
 \usage{
-load_nomenclature()
+load_nomenclature(load = TRUE, save = TRUE)
+}
+\arguments{
+\item{load}{Load a dumped output. It the output does not exist, it is recalculated}
+
+\item{save}{Dump the output for later readings}
 }
 \value{
-The nomenclature data as an xml2 object
+The nomenclature data as a data.frame object.
 }
 \description{
-Load the nomenclature file given in the Orphanet nomenclature pack
+Load the nomenclature file given in the Orphanet nomenclature pack,
+then process it to make it more R-friendly.
+}
+\examples{
+nom_data = load_nomenclature()
+
 }

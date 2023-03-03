@@ -20,140 +20,86 @@ classLevel_literal = c('36540'='Group',
                        '36547'='Disorder',
                        '36554'='Subtype')
 
-#' Load the nomenclature file given in the Orphanet nomenclature pack
-#'
-#' @return The nomenclature data as an xml2 object
-#' @importFrom xml2 read_xml
-#' @export
-load_nomenclature = function()
-{
-  # Load data
-  pack_nomenclature_path = system.file('extdata', 'Orphanet_Nomenclature_Pack_FR', package='orphatools')
-  orpha_nomenclature_path = file.path(pack_nomenclature_path, 'ORPHAnomenclature_fr.xml')
-  nomenclature_data = read_xml(orpha_nomenclature_path, encoding = 'ISO-8859-1')
 
-  return(nomenclature_data)
+#' Load the nomenclature file given in the Orphanet nomenclature pack,
+#' then process it to make it more R-friendly.
+#'
+#' @param load Load a dumped output. It the output does not exist, it is recalculated
+#' @param save Dump the output for later readings
+#'
+#' @return The nomenclature data as a data.frame object.
+#'
+#' @import magrittr
+#' @importFrom xml2 read_xml as_list
+#' @importFrom dplyr bind_rows
+#' @export
+#' @examples
+#' nom_data = load_nomenclature()
+#'
+load_nomenclature = function(load = TRUE, save = TRUE)
+{
+  flatten_data = function(disorder_node){
+    props_df = data.frame(
+      orphaCode = disorder_node$OrphaCode[[1]],
+      name = disorder_node$Name[[1]],
+      flagValue = disorder_node$FlagValue[[1]],
+      disorderType = disorder_node$DisorderType %>% attr('id'),
+      classLevel = disorder_node$ClassificationLevel %>% attr('id')
+    )
+    return(props_df)
+  }
+
+  extdata_path = system.file('extdata', package='orphatools')
+
+  # Load data
+  if(load && file.exists(file.path(extdata_path, 'nom_data.RDS')))
+    nom_data_R = readRDS(file.path(extdata_path, 'nom_data.RDS'))
+  else
+  {
+    # Load data
+    pack_nomenclature_path = system.file('extdata', 'Orphanet_Nomenclature_Pack_FR', package='orphatools')
+    orpha_nomenclature_path = file.path(pack_nomenclature_path, 'ORPHAnomenclature_fr.xml')
+    nomenclature_data = read_xml(orpha_nomenclature_path, encoding = 'ISO-8859-1') %>% as_list()
+
+    # Preprocess data to make it R-manageable
+    nom_data_R = nomenclature_data[[1]][[2]] %>%
+      lapply(flatten_data) %>%
+      bind_rows()
+
+    rm(nomenclature_data)
+    if(save)
+      saveRDS(nom_data_R, file.path(extdata_path, 'nom_data.RDS'))
+  }
+  return(nom_data_R)
 }
 
 
-#' Find properties related to a given Orpha code
+#' Translate abstract codes into literal values to make them more understandable
 #'
-#' @param orphaCode The Orpha code to consider
-#' @param nom_data The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.
-#' @param literal_values If TRUE, returned values are human readable.
+#' @param nom_data The nomenclature data as loaded with the `load_nomenclature` function.
 #'
-#' It is recommended to load nomenclature first and pass it as an argument to avoid memory overflow when the function is called multiple times.
+#' @return The same properties (name, flag value, disorder type, classification level)
+#' in a human-readable way
 #'
-#' @return The properties (name, flag value, disorder type, classification level) associated to the given Orpha code
 #' @import magrittr
 #' @importFrom xml2 xml_find_first xml_child xml_text xml_attr
 #' @export
 #'
 #' @examples
-#' code = '303'
-#' props = get_code_properties(code)
-#'
 #' nom_data = load_nomenclature()
-#' props = get_code_properties(code, nom_data = nom_data)
+#' nom_data_new = translate_properties(nom_data)
 #'
-#' props = get_code_properties(code, nom_data = nom_data, literal_values = TRUE)
-get_code_properties = function(orphaCode, nom_data=NULL, literal_values=FALSE)
+translate_properties = function(nom_data)
 {
-  # Load nomenclature if necessary
-  if(is.null(nom_data))
-    nom_data = load_nomenclature()
-
-  # Get disorder node
-  node = xml_find_first(nom_data, sprintf('DisorderList/Disorder[OrphaCode=%s]', orphaCode))
-
-  # Retrieve properties
-  flagValue = node %>% xml_child('FlagValue') %>% xml_text() # Active / Inactive
-  disorderType = node %>% xml_child('DisorderType') %>% xml_attr('id') # Clinical entities
-  classLevel = node %>% xml_child('ClassificationLevel') %>% xml_attr('id') # Group / Disorder / Subtype
-  name = node %>% xml_child('Name') %>% xml_text()
-
-  if(literal_values){
-    flagValue = flagValue_literal[flagValue] %>% unname
-    disorderType = disorderType_literal[disorderType] %>% unname
-    classLevel = classLevel_literal[classLevel] %>% unname
-  }
-
-  # Gather properties and return
-  props = data.frame(orphaCode = orphaCode,
-                     name = name,
-                     flagValue = flagValue,
-                     disorderType = disorderType,
-                     classLevel = classLevel)
-
-  rm(nom_data)
-  return(props)
+  nom_data_translated = nom_data %>%
+    mutate(
+      flagValue = flagValue_literal[flagValue] %>% unname,
+      disorderType = disorderType_literal[disorderType] %>% unname,
+      classLevel = classLevel_literal[classLevel] %>% unname
+    )
+  return(nom_data_translated)
 }
 
-
-#' Find the disorder name related to a given Orpha code
-#'
-#' @param orphaCode The Orpha code to consider
-#' @param nom_data The nomenclature data as it is in the Orphanet nomenclature pack. If NULL, the function loads it itself.
-#'
-#' @return The disorder name related to the given orphaCode
-#' @export
-#'
-#' @examples
-#' orphaCode = '303'
-#' nom_data = load_nomenclature()
-#' disorderName = get_disorder_name(orphaCode, nom_data=nom_data)
-get_disorder_name = function(orphaCode, nom_data=NULL)
-{
-  # Load nomenclature if necessary
-  if(is.null(nom_data))
-    nom_data = load_nomenclature()
-
-  # Get disorder node
-  node = xml_find_first(nom_data, sprintf('DisorderList/Disorder[OrphaCode=%s]', orphaCode))
-
-  # Retrieve name
-  name = node %>% xml_child('Name') %>% xml_text()
-
-  return(name)
-}
-
-#' Generate and load an OrphaCode -> Classification Level table
-#'
-#' @param load Load a dumped output. It the output does not exist, it is recalculated
-#' @param save Dump the output for later readings
-#'
-#' @return The OrphaCode -> Classification Level table, as defined in the Orphanet nomenclature
-#' @export
-#'
-#' @examples
-#' class_levels = load_class_levels()
-#'
-load_class_levels = function(load=TRUE, save=TRUE)
-{
-  extdata_path = system.file('extdata', package='orphatools')
-
-  # Load data
-  if(load && file.exists(file.path(extdata_path, 'class_levels.RDS')))
-    class_levels = readRDS(file.path(extdata_path, 'class_levels.RDS'))
-  else
-  {
-    nom_data = load_nomenclature()
-    all_codes = nom_data %>%
-        xml_find_all('//OrphaCode') %>%
-        xml_text() %>%
-        unique()
-    class_levels = data.frame(orphaCode = all_codes) %>%
-        mutate(classLevel = sapply(orphaCode,
-                                   function(x) get_code_properties(x,
-                                                                   nom_data=nom_data) %>%
-                                     pull(classLevel)))
-
-    if(save)
-      saveRDS(class_levels, file.path(extdata_path, 'class_levels.RDS'))
-  }
-
-  return(class_levels)
-}
 
 #' Translate a flagValue column into human readable data
 #'

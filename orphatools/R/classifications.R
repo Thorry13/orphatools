@@ -87,7 +87,7 @@ is_in_classif = function(orphaCode, class_data)
 
 #' Find the root or the roots of a given graph.
 #'
-#' @param X The graph (igraph object or edgelist as a dataframe) to find the roots from
+#' @param graph The graph (igraph object) to find the roots from
 #' @param first_only If TRUE, return one root only
 #'
 #' @return The root(s) of the given graph as a numeric code
@@ -98,20 +98,14 @@ is_in_classif = function(orphaCode, class_data)
 #' @examples
 #' edgelist = get_ancestors('303')
 #' graph = igraph::graph_from_data_frame(edgelist)
-#'
-#' roots = find_roots(edgelist)
 #' roots = find_roots(graph)
-find_roots = function(X, first_only=FALSE)
+#'
+find_roots = function(graph, first_only=FALSE)
 {
   # Roots are the only nodes having no arcs going in
-  if('data.frame' %in% class(X))
-    roots = setdiff(X$from, X$to)
-  else if(class(X)=='igraph')
-  {
-    D = degree(X, mode='in')
-    D = D[D==0]
-    roots = names(D) # %>% as.numeric()
-  }
+  D = degree(graph, mode='in')
+  D = D[D==0]
+  roots = names(D) # %>% as.numeric()
   if(first_only)
     return(roots[1])
   else
@@ -122,7 +116,7 @@ find_roots = function(X, first_only=FALSE)
 
 #' Find the leaves of a given graph.
 #'
-#' @param X The graph (igraph object or edgelist as a dataframe) to find the leaves from
+#' @param graph The graph (igraph object) to find the leaves from
 #'
 #' @return The leaves of the given graph as numeric codes
 #' @import magrittr
@@ -132,20 +126,15 @@ find_roots = function(X, first_only=FALSE)
 #' @examples
 #' edgelist = get_descendants('303')
 #' graph = igraph::graph_from_data_frame(edgelist)
-#'
-#' leaves = find_leaves(edgelist)
 #' leaves = find_leaves(graph)
-find_leaves = function(X)
+#'
+find_leaves = function(graph)
 {
   # Leaves are the only nodes having no arcs going out
-  if('data.frame' %in% class(X))
-    leaves = setdiff(X$to, X$from)
-  else if(class(X)=='igraph')
-  {
-    d = degree(X, mode='out')
-    d = d[d==0]
-    leaves = names(d) # %>% as.numeric()
-  }
+  d = degree(graph, mode='out')
+  d = d[d==0]
+  leaves = names(d) # %>% as.numeric()
+
   return(leaves)
 }
 
@@ -355,8 +344,8 @@ get_siblings = function(orphaCode, class_data=NULL, codes_only=FALSE)
 #'
 #' @return The built base graph
 #' @import magrittr
-#' @importFrom igraph graph_from_data_frame as_data_frame
-#' @importFrom dplyr bind_rows distinct
+#' @importFrom igraph graph_from_data_frame as_data_frame make_empty_graph
+#' @importFrom dplyr bind_rows distinct n_distinct
 #' @importFrom stats na.omit
 #' @importFrom purrr keep is_empty
 #' @export
@@ -372,6 +361,7 @@ get_siblings = function(orphaCode, class_data=NULL, codes_only=FALSE)
 #'
 get_common_graph = function(codes_list, class_data=NULL, what='both', shortcuts=FALSE)
 {
+  codes_list = na.omit(codes_list)
   if(what=='both')
     what = c('ancestors', 'descendants')
 
@@ -387,7 +377,9 @@ get_common_graph = function(codes_list, class_data=NULL, what='both', shortcuts=
       merge_graphs()
   }
   else
-    graph_ancestors = NULL
+    graph_ancestors = make_empty_graph() %>%
+      add_vertices(n_distinct(codes_list),
+                   name = unique(codes_list))
 
 
   if('descendants' %in% what)
@@ -409,7 +401,9 @@ get_common_graph = function(codes_list, class_data=NULL, what='both', shortcuts=
     }
   }
   else
-    graph_descendants = NULL
+    graph_descendants = make_empty_graph() %>%
+      add_vertices(n_distinct(codes_list),
+                   name = unique(codes_list))
 
   graph = merge_graphs(graphs_list = list(graph_ancestors, graph_descendants))
 
@@ -497,34 +491,38 @@ get_LCAs = function(codes_list, class_data=NULL)
 #' get_lowest_groups(orphaCode = '158676')
 get_lowest_groups = function(orphaCode, class_data=NULL)
 {
-  keep_lowest_groups = function(code, df_ancestors)
+  keep_lowest_groups = function(code, df_ancestors, nom_data)
   {
-    df_select = df_ancestors %>% filter(to == code)
-    df_select$classLevel = df_select$from %>%
-      sapply(function(code) get_code_properties(code, nom_data)['classLevel'])
+    df_select = df_ancestors %>%
+      filter(to == code) %>%
+      left_join(nom_data[,c('orphaCode', 'classLevel')],
+                by=c('from'='orphaCode'))
 
+    # Find upper groups recursively if a disorder or a subtype of disorder was found as parent
     groups_supp = NULL
-    if(sum(df_select$classLevel != 36540))
+    if(sum(df_select$classLevel != '36540'))
       groups_supp = df_select %>%
-      filter(classLevel != 36540) %>%
-      pull(from) %>%
-      sapply(keep_lowest_groups, df_ancestors) %>%
-      unique()
+        filter(classLevel != '36540') %>%
+        pull(from) %>%
+        sapply(keep_lowest_groups, df_ancestors, nom_data) %>%
+        unique()
 
-    lowest_groups = unique(c(df_select %>% filter(classLevel == 36540) %>% pull(from),
+    lowest_groups = unique(c(df_select %>% filter(classLevel == '36540') %>% pull(from),
                              groups_supp))
     return(lowest_groups)
   }
+
   nom_data = load_nomenclature()
 
   # Check if it isn't a group already
-  props = get_code_properties(orphaCode)
-  if(props['classLevel'] == 36540)
+  code = orphaCode
+  classLevel = nom_data %>% filter(orphaCode == code) %>% pull(classLevel)
+  if(classLevel == '36540')
     return(orphaCode)
 
   # Find groups above the code
   df_ancestors = get_ancestors(orphaCode, class_data)
-  group_ancestors = keep_lowest_groups(orphaCode, df_ancestors)
+  group_ancestors = keep_lowest_groups(orphaCode, df_ancestors, nom_data)
 
   # Check if a parent is not an ancestor of another
   graph = get_common_graph(group_ancestors, what='ancestors')
@@ -576,13 +574,12 @@ subtype_to_disorder = function(subtypeCode, class_data=NULL)
 
   nom_data = load_nomenclature()
   ancestors = get_ancestors(subtypeCode, class_data = class_data, codes_only = TRUE)
-  disorderCode = sapply(ancestors, get_code_properties, nom_data) %>%
-    t() %>%
-    as.data.frame() %>%
+  disorder_code = data.frame(orphaCode = ancestors) %>%
+    left_join(nom_data, by='orphaCode') %>%
     filter(classLevel == 36547) %>%
     pull(orphaCode)
 
-  return(disorderCode)
+  return(disorder_code)
 }
 
 
