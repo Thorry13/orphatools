@@ -5,7 +5,13 @@
 \title{A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
 Aggregation works if column to group is named "code".}
 \usage{
-group_by_code(.data, ..., class_data = NULL, include_descendants = TRUE)
+group_by_code(
+  .data,
+  ...,
+  class_data = NULL,
+  include_descendants = TRUE,
+  force_nodes = NULL
+)
 }
 \arguments{
 \item{.data}{The data consider}
@@ -15,6 +21,9 @@ group_by_code(.data, ..., class_data = NULL, include_descendants = TRUE)
 \item{class_data}{The classification data to consider. If NULL, automatically search a classification for each code}
 
 \item{include_descendants}{If TRUE (default), for each code every descendants of this code are included in its group}
+
+\item{force_nodes}{function usually uses Orpha codes present in the original dataframe only,
+but you can force aggregation on some additional nodes here}
 }
 \value{
 Results of the group_by operation
