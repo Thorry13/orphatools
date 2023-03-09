@@ -74,6 +74,57 @@ load_nomenclature = function(load = TRUE, save = TRUE)
 }
 
 
+#' Load for each orphaCode its list of synonyms from the nomenclature data
+#'
+#' @param load Load a dumped output. It the output does not exist, it is recalculated
+#' @param save Dump the output for later readings
+#'
+#' @return A data.frame object with three columns : orpha Code, preferred term, synonyms
+#' @export
+#'
+#' @examples
+#' df_synonyms = load_synonyms()
+load_synonyms = function(load = TRUE, save = TRUE){
+  find_synonyms = function(disorder_node){
+    df_synonyms = data.frame(
+      orphaCode = disorder_node$OrphaCode[[1]],
+      name = disorder_node$Name[[1]],
+      count = disorder_node$SynonymList %>% attr('count') %>% as.numeric(),
+      synonyms =
+          sapply(disorder_node$SynonymList,
+                 function(x)  x[[1]]) %>%
+          unname()
+      ) %>%
+      mutate(synonyms = ifelse(count, synonyms, as.character(NA))) %>%
+      select(-count)
+  }
+
+
+  extdata_path = system.file('extdata', package='orphatools')
+
+  # Load data
+  if(load && file.exists(file.path(extdata_path, 'df_synonyms.RDS')))
+    df_synonyms = readRDS(file.path(extdata_path, 'df_synonyms.RDS'))
+  else
+  {
+    # Load data
+    pack_nomenclature_path = system.file('extdata', 'Orphanet_Nomenclature_Pack_FR', package='orphatools')
+    orpha_nomenclature_path = file.path(pack_nomenclature_path, 'ORPHAnomenclature_fr.xml')
+    nomenclature_data = read_xml(orpha_nomenclature_path, encoding = 'ISO-8859-1') %>% as_list()
+
+    # Preprocess data to make it R-manageable
+    df_synonyms = nomenclature_data[[1]][[2]] %>%
+      lapply(find_synonyms) %>%
+      bind_rows()
+
+    rm(nomenclature_data)
+    if(save)
+      saveRDS(df_synonyms, file.path(extdata_path, 'df_synonyms.RDS'))
+  }
+  return(df_synonyms)
+}
+
+
 #' Translate abstract codes into literal values to make them more understandable
 #'
 #' @param nom_data The nomenclature data as loaded with the `load_nomenclature` function.
