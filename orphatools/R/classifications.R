@@ -1,15 +1,13 @@
 #' Read class returns a from/to dataframe associated to a classification
 #'
 #' @param path Path to classification file
-#' @param load Load a dumped output. It the output does not exist, it is recalculated
-#' @param save Dump the output for later readings
 #'
 #' @return A from/to dataframe representing the edges between the classification entities
 #' @import magrittr
 #' @importFrom dplyr bind_rows
 #' @importFrom xml2 read_xml xml_find_first xml_find_all
 #' @export
-read_class = function(path, load=TRUE, save=TRUE)
+read_class = function(path)
 {
   class_data = read_xml(path)
 
@@ -30,9 +28,6 @@ read_class = function(path, load=TRUE, save=TRUE)
 
 #' Load the 33 classifications given in the Orphanet nomenclature pack
 #'
-#' @param load Load a dumped output. It the output does not exist, it is recalculated.
-#' @param save Dump the output for later readings
-#'
 #' @return All classifications as xml2 objects
 #' @import magrittr
 #' @importFrom dplyr bind_rows
@@ -41,24 +36,17 @@ read_class = function(path, load=TRUE, save=TRUE)
 #'
 #' @examples
 #' all_class = load_classifications()
-load_classifications = function(load=TRUE, save=TRUE)
+load_classifications = function()
 {
   extdata_path = system.file('extdata', package='orphatools')
+  all_class_path = file.path(extdata_path, 'all_class.RDS')
 
-  # Load data
-  if(load && file.exists(file.path(extdata_path, 'all_class.RDS')))
+  if(file.exists(all_class_path))
     all_class = readRDS(file.path(extdata_path, 'all_class.RDS'))
   else
-  {
-    orpha_classifications_path = file.path(extdata_path, 'Orphanet_Nomenclature_Pack_FR', 'Classifications_fr')
-    class_list = list.files(orpha_classifications_path) %>% as.list()
-    all_class = list()
-    all_class = lapply(class_list,
-                       function(class_file) read_class(file.path(orpha_classifications_path, class_file))) %>%
-      setNames(class_list %>% sapply(tools::file_path_sans_ext))
-    if(save)
-      saveRDS(all_class, file.path(extdata_path, 'all_class.RDS'))
-  }
+    stop(simpleError(
+'Loading of classifications failed. Internal files might be broken.
+See `upload_nomenclature_pack` or consider reisntalling orphatools package.'))
 
   return(all_class)
 }
@@ -561,23 +549,16 @@ get_lowest_groups = function(orphaCode, class_data=NULL)
 #' subtype_to_disorder(subtypeCode = '303') # 303 is a group of disorder
 subtype_to_disorder = function(subtypeCode, class_data=NULL)
 {
-  # If no classification was specified, find one containing the given Orpha code
-  if(is.null(class_data))
-  {
-    all_class = load_classifications()
-    for(class_data in all_class)
-    {
-      if(is_in_classif(subtypeCode, class_data))
-        break
-    }
-  }
-
   nom_data = load_nomenclature()
   ancestors = get_ancestors(subtypeCode, class_data = class_data, codes_only = TRUE)
-  disorder_code = data.frame(orphaCode = ancestors) %>%
-    left_join(nom_data, by='orphaCode') %>%
-    filter(classLevel == 36547) %>%
+  disorder_code = nom_data %>%
+    filter(orphaCode %in% ancestors,
+           classLevel == 36547) %>%
     pull(orphaCode)
+    # data.frame(orphaCode = ancestors) %>%
+    # left_join(nom_data, by='orphaCode') %>%
+    # filter(classLevel == 36547) %>%
+    # pull(orphaCode)
 
   return(disorder_code)
 }

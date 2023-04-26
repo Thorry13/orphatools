@@ -4,14 +4,10 @@
 \alias{read_class}
 \title{Read class returns a from/to dataframe associated to a classification}
 \usage{
-read_class(path, load = TRUE, save = TRUE)
+read_class(path)
 }
 \arguments{
 \item{path}{Path to classification file}
-
-\item{load}{Load a dumped output. It the output does not exist, it is recalculated}
-
-\item{save}{Dump the output for later readings}
 }
 \value{
 A from/to dataframe representing the edges between the classification entities

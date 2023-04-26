@@ -4,12 +4,7 @@
 \alias{load_classifications}
 \title{Load the 33 classifications given in the Orphanet nomenclature pack}
 \usage{
-load_classifications(load = TRUE, save = TRUE)
-}
-\arguments{
-\item{load}{Load a dumped output. It the output does not exist, it is recalculated.}
-
-\item{save}{Dump the output for later readings}
+load_classifications()
 }
 \value{
 All classifications as xml2 objects

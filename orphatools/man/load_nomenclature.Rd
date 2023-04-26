@@ -5,12 +5,7 @@
 \title{Load the nomenclature file given in the Orphanet nomenclature pack,
 then process it to make it more R-friendly.}
 \usage{
-load_nomenclature(load = TRUE, save = TRUE)
-}
-\arguments{
-\item{load}{Load a dumped output. It the output does not exist, it is recalculated}
-
-\item{save}{Dump the output for later readings}
+load_nomenclature()
 }
 \value{
 The nomenclature data as a data.frame object.

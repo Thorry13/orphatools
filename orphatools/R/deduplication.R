@@ -21,7 +21,6 @@ roll_up_descendants = function(.data, orphaCode, edgelist)
 
 
 #' A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
-#' Aggregation works if column to group is named "code".
 #'
 #' @param .data The data consider
 #' @param ... Additional parameters to transmit to the dplyr group_by function
@@ -29,6 +28,7 @@ roll_up_descendants = function(.data, orphaCode, edgelist)
 #' @param include_descendants If TRUE (default), for each code every descendants of this code are included in its group
 #' @param force_nodes function usually uses Orpha codes present in the original dataframe only,
 #' but you can force aggregation on some additional nodes here
+#' @param code_col default 'code', Orpha codes column name
 #'
 #' @return Results of the group_by operation
 #' @import magrittr
@@ -43,11 +43,12 @@ roll_up_descendants = function(.data, orphaCode, edgelist)
 #' df_counts = df_patients %>% group_by(code) %>% count() %>% as.data.frame() # Naive counting
 #' df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame() # New method - Without deduplication
 #' df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame() # New method - With deduplication
-group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE, force_nodes=NULL)
+group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE, force_nodes=NULL, code_col='code')
 {
-  # Find all Orpha codes present in the data
-  all_codes = unique(c(.data$code, force_nodes)) # %>% as.numeric()
+  # Find all Orpha codes present in the data and add forced nodes
+  all_codes = unique(c(.data[[code_col]], force_nodes)) %>% as.character()
 
+  # Get the corresponding orpha structure
   common_graph = get_common_graph(all_codes, class_data = class_data,
                                   what = 'descendants', shortcuts = TRUE)
   common_edgelist = as_data_frame(common_graph, what='edges')
@@ -58,5 +59,5 @@ group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE, 
     bind_rows()
   .data = bind_rows(list(.data, df_to_add))
 
-  return(group_by(.data, code, ...))
+  return(group_by(.data, !!sym(code_col), ...))
 }

@@ -2,15 +2,15 @@
 % Please edit documentation in R/deduplication.R
 \name{group_by_code}
 \alias{group_by_code}
-\title{A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
-Aggregation works if column to group is named "code".}
+\title{A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.}
 \usage{
 group_by_code(
   .data,
   ...,
   class_data = NULL,
   include_descendants = TRUE,
-  force_nodes = NULL
+  force_nodes = NULL,
+  code_col = "code"
 )
 }
 \arguments{
@@ -24,13 +24,14 @@ group_by_code(
 
 \item{force_nodes}{function usually uses Orpha codes present in the original dataframe only,
 but you can force aggregation on some additional nodes here}
+
+\item{code_col}{default 'code', Orpha codes column name}
 }
 \value{
 Results of the group_by operation
 }
 \description{
 A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
-Aggregation works if column to group is named "code".
 }
 \examples{
 library(magrittr)

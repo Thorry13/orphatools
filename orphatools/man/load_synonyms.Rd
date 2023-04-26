@@ -4,12 +4,7 @@
 \alias{load_synonyms}
 \title{Load for each orphaCode its list of synonyms from the nomenclature data}
 \usage{
-load_synonyms(load = TRUE, save = TRUE)
-}
-\arguments{
-\item{load}{Load a dumped output. It the output does not exist, it is recalculated}
-
-\item{save}{Dump the output for later readings}
+load_synonyms()
 }
 \value{
 A data.frame object with three columns : orpha Code, preferred term, synonyms
