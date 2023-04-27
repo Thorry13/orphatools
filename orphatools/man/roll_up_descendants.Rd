@@ -5,7 +5,7 @@
 \title{For counting operations, all descendants of a given code should be rolled up.
 The rows corresponding to a descendant are then duplicated to be attributed to the given code also}
 \usage{
-roll_up_descendants(.data, orphaCode, edgelist)
+roll_up_descendants(.data, orphaCode, edgelist, code_col = "code")
 }
 \arguments{
 \item{.data}{The data to consider}

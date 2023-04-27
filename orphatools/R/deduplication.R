@@ -8,13 +8,13 @@
 #' @return The duplicated descendants rows newly attributed to the given Orpha code
 #' @import magrittr
 #' @importFrom dplyr filter
-roll_up_descendants = function(.data, orphaCode, edgelist)
+roll_up_descendants = function(.data, orphaCode, edgelist, code_col='code')
 {
   codes_descendants = edgelist %>% filter(from == orphaCode) %>% pull(to)
   # Duplicated rows to be returned
-  df_to_add = .data %>% filter(code %in% codes_descendants)
-  if(length(df_to_add$code))
-    df_to_add$code = orphaCode
+  df_to_add = .data %>% filter(!!sym(code_col) %in% codes_descendants)
+  if(length(df_to_add[[code_col]]))
+    df_to_add[[code_col]] = orphaCode
   return(df_to_add)
 }
 
@@ -55,7 +55,7 @@ group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE, 
 
   # Duplicate descendants rows to count
   df_to_add = all_codes %>%
-    lapply(function(orphaCode) roll_up_descendants(.data, orphaCode, common_edgelist)) %>%
+    lapply(function(orphaCode) roll_up_descendants(.data, orphaCode, common_edgelist, code_col)) %>%
     bind_rows()
   .data = bind_rows(list(.data, df_to_add))
 

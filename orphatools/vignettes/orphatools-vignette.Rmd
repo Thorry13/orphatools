@@ -222,3 +222,12 @@ df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient
 kable(df_counts, 'html')
 ```
 
+### Different column names
+
+Method works if *code_col* parameter is not 'code' :
+
+```{r counting4}
+df_counts = df_patients %>% rename('orphaCode'='code') %>% group_by_code(code_col='orphaCode') %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
+kable(df_counts, 'html')
+```
+
