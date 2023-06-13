@@ -262,14 +262,15 @@ interactive_plot = function(graph, layout_tree = FALSE)
 {
   df_nodes = graph %>%
     as_data_frame(what='vertices') %>%
-    rename(id=name)
+    rename(id=name) %>%
+    mutate(label=id)
+
 
   # Rename color parameters if they are provided
   if(all(c('color', 'frame.color', 'label.color') %in%
                 names(df_nodes))){
   df_nodes = df_nodes %>%
-    mutate(label=id,
-           color.background = color,
+    mutate(color.background = color,
            color.highlight = color,
            color.border = ifelse(
              is.na(frame.color),
