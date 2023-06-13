@@ -7,7 +7,7 @@
 #'
 #' @return The duplicated descendants rows newly attributed to the given Orpha code
 #' @import magrittr
-#' @importFrom dplyr filter
+#' @importFrom dplyr filter pull
 roll_up_descendants = function(.data, orphaCode, edgelist, code_col='code')
 {
   codes_descendants = edgelist %>% filter(from == orphaCode) %>% pull(to)
@@ -33,6 +33,7 @@ roll_up_descendants = function(.data, orphaCode, edgelist, code_col='code')
 #' @return Results of the group_by operation
 #' @import magrittr
 #' @importFrom dplyr bind_rows group_by
+#' @importFrom igraph as_data_frame
 #' @export
 #'
 #' @examples
@@ -43,8 +44,7 @@ roll_up_descendants = function(.data, orphaCode, edgelist, code_col='code')
 #' df_counts = df_patients %>% group_by(code) %>% count() %>% as.data.frame() # Naive counting
 #' df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame() # New method - Without deduplication
 #' df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame() # New method - With deduplication
-group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE, force_nodes=NULL, code_col='code')
-{
+group_by_code = function(.data, ..., class_data=NULL, include_descendants=TRUE, force_nodes=NULL, code_col='code'){
   # Find all Orpha codes present in the data and add forced nodes
   all_codes = unique(c(.data[[code_col]], force_nodes)) %>% as.character()
 

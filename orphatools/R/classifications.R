@@ -28,10 +28,9 @@ read_class = function(path)
 
 #' Load the 33 classifications given in the Orphanet nomenclature pack
 #'
-#' @return All classifications as xml2 objects
+#' @return All classifications as dataframes
 #' @import magrittr
 #' @importFrom dplyr bind_rows
-#' @importFrom xml2 read_xml
 #' @export
 #'
 #' @examples
@@ -132,16 +131,14 @@ find_leaves = function(graph)
 #'
 #' @param orphaCode The numerical Orpha code
 #' @param class_data The classification data to consider. If NULL, find all classifications containing the given Orpha code. Ancestors may differ depending on the chosen classification.
-#' @param gen Number of generations to take into account. If Inf, the default, all generations are included.
 #' @param codes_only If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph
 #' @param shortcuts (default FALSE) if TRUE, add an edge from every found ancestors to the given Orpha code
 #'
 #' @return A from/to data.frame ready to be converted into a graph, or codes only if asked so
 #' @import magrittr
-#' @importFrom xml2 xml_parents xml_name
 #' @importFrom dplyr mutate group_by ungroup bind_rows distinct lag rename left_join
 #' @importFrom purrr is_empty
-#' @importFrom ggenealogy getAncestors
+#' @importFrom igraph graph_from_data_frame as_data_frame add_vertices path make_empty_graph
 #' @export
 #'
 #' @examples
@@ -152,19 +149,26 @@ find_leaves = function(graph)
 #' all_class = load_classifications()
 #' df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
 #' df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
-get_ancestors = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE, shortcuts=FALSE)
+get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts=FALSE)
 {
   get_ancestors_from_class = function(orphaCode, class_data)
   {
     if(!is_in_classif(orphaCode, class_data))
       return(NULL)
 
-    class_data = class_data %>% rename(child=to, parent=from)
+    class_graph = graph_from_data_frame(class_data)
+    root = find_roots(class_graph)
+    df_ancestors_class = all_simple_paths(class_graph, root, orphaCode) %>%
+      lapply(function(path0){
+        make_empty_graph(directed=T) %>%
+          add_vertices(length(path0), attr=list(name=names(path0))) +
+          path(names(path0))
+      }) %>%
+      lapply(as_data_frame, what='edges') %>%
+      bind_rows %>%
+      distinct()
 
-    # Find all parents nodes up to the root (ancestors) for each node in the xml data
-    ancestors = getAncestors(orphaCode, class_data, gen=gen)
-
-    return(ancestors)
+    return(df_ancestors_class)
   }
 
   # Use specified classification or all of them if NULL was given
@@ -174,36 +178,26 @@ get_ancestors = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE, 
     all_class = list(class_data)
 
   # Find ancestors in each classification
-  ancestors = all_class %>%
+  df_ancestors = all_class %>%
     lapply(function(current_class) get_ancestors_from_class(orphaCode, current_class)) %>%
-    bind_rows()
+    bind_rows() %>%
+    distinct()
+  ancestors = unique(df_ancestors$from)
 
   if(length(ancestors) == 0)
     return(NULL)
 
   if(codes_only)
-    return(unique(ancestors$label))
+    return(ancestors)
   else
   {
-    all_codes = c(ancestors$label, orphaCode)
-
-    # Shortcuts are useful aggregate information from descendants to ancestors
+    # Shortcuts are useful aggregated information from descendants to ancestors
     if(shortcuts)
     {
-      df_shortcuts = data.frame(from=ancestors$label,
+      df_shortcuts = data.frame(from=ancestors,
                                 to=orphaCode)
-      all_edges = bind_rows(c(all_class, list(df_shortcuts)))
+      df_ancestors = bind_rows(df_ancestors, df_shortcuts) %>% distinct()
     }
-    else
-      all_edges = bind_rows(all_class) %>%
-        left_join(ancestors, by=c('from'='label'))
-
-    # Cleaning
-    df_ancestors = all_edges %>%
-      select(from, to) %>%
-      filter(from %in% all_codes & to %in% all_codes) %>%
-      distinct() %>%
-      as.data.frame()
 
     return(df_ancestors)
   }
@@ -215,22 +209,20 @@ get_ancestors = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE, 
 #'
 #' @param orphaCode The numerical Orpha code
 #' @param class_data The classification data to consider. If NULL, find one automatically. Descendance is independant from classification.
-#' @param gen Number of generations to take into account. If Inf, the default, all generations are included.
 #' @param codes_only If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph
 #' @param shortcuts (default FALSE) if TRUE, add an edge from the given Orpha code to every found descendants
 #'
 #' @return A from/to data.frame ready to be converted into a graph, or codes only if asked so
 #' @import magrittr
-#' @importFrom xml2 xml_find_first xml_text xml_child xml_children xml_attr
 #' @importFrom dplyr bind_rows distinct
-#' @importFrom ggenealogy getDescendants
+#' @importFrom igraph graph_from_data_frame as_data_frame add_vertices path make_empty_graph
 #' @export
 #'
 #' @examples
 #' code = '303'
 #' descendants_codes = get_descendants(code, codes_only=TRUE)
 #' df_descendants = get_descendants(code)
-get_descendants = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE, shortcuts=FALSE)
+get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts=FALSE)
 {
   # If no classification was specified, find one containing the given Orpha code
   if(is.null(class_data))
@@ -247,41 +239,39 @@ get_descendants = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE
   if(!is_in_classif(orphaCode, class_data))
     return(NULL)
 
-  descendants = getDescendants(orphaCode,
-                               class_data %>% rename(parent=from, child=to),
-                               gen=gen)
+  df_descendants = class_data %>%
+    graph_from_data_frame() %>%
+    all_simple_paths(orphaCode) %>%
+    lapply(function(path0)
+      make_empty_graph(directed=T) %>%
+        add_vertices(length(path0), attr = list(name=names(path0))) +
+        path(names(path0))
+      ) %>%
+    lapply(as_data_frame, what='edges') %>%
+    bind_rows() %>%
+    distinct()
+  descendants = unique(df_descendants$to)
 
   if(length(descendants) == 0)
     return(NULL)
 
   # Return
   if(codes_only)
-    return(unique(descendants$label))
+    return(descendants)
   else
   {
-    all_codes = c(descendants$label, orphaCode)
-
     # Shortcuts are useful to aggregate information from descendants to ancestors
     if(shortcuts)
     {
       df_shortcuts = data.frame(from=orphaCode,
-                                to=descendants$label)
-      all_edges = bind_rows(c(all_class, list(df_shortcuts)))
+                                to=descendants)
+      df_descendants = bind_rows(df_descendants, df_shortcuts) %>% distinct()
     }
-    else
-      all_edges = bind_rows(all_class) %>%
-        left_join(descendants, by=c('to'='label'))
-
-    # Cleaning
-    df_descendants = all_edges %>%
-      select(from, to) %>%
-      filter(from %in% all_codes & to %in% all_codes) %>%
-      distinct() %>%
-      as.data.frame()
 
     return(df_descendants)
   }
 }
+
 
 #' Get siblings of an Orpha code.
 #'
@@ -291,9 +281,7 @@ get_descendants = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE
 #'
 #' @return A from/to data.frame ready to be converted into a graph, or codes only if asked so
 #' @import magrittr
-#' @importFrom xml2 xml_find_first xml_text xml_child xml_children xml_attr
-#' @importFrom dplyr bind_rows distinct
-#' @importFrom ggenealogy getDescendants
+#' @importFrom dplyr bind_rows distinct filter pull
 #' @export
 #'
 #' @examples
@@ -303,15 +291,15 @@ get_descendants = function(orphaCode, class_data=NULL, gen=Inf, codes_only=FALSE
 get_siblings = function(orphaCode, class_data=NULL, codes_only=FALSE)
 {
   parents = get_ancestors(orphaCode,
-                             class_data=class_data,
-                             gen=1,
-                             codes_only=TRUE)
+                             class_data=class_data) %>%
+    filter(to==orphaCode) %>%
+    pull(from)
 
   df_siblings = lapply(parents,
                        get_descendants,
-                       class_data=class_data,
-                       gen=1) %>%
+                       class_data=class_data) %>%
     bind_rows() %>%
+    filter(from %in% parents) %>%
     distinct() %>%
     as.data.frame()
 
@@ -375,17 +363,17 @@ get_common_graph = function(codes_list, class_data=NULL, what='both', shortcuts=
     graph_descendants = NULL
     for(current_code in codes_list)
     {
-      if(is.null(graph_descendants) ||
-         # !current_code %in% as.numeric(names(V(graph_descendants))))
-         !current_code %in% names(V(graph_descendants)))
-      {
+      # if(is.null(graph_descendants) ||
+      #    # !current_code %in% as.numeric(names(V(graph_descendants))))
+      #    !current_code %in% names(V(graph_descendants)))
+      # {
         df_descendants = get_descendants(current_code,
                                          class_data,
                                          shortcuts=shortcuts)
         if(!is_empty(df_descendants))
           graph_descendants = merge_graphs(list(graph_descendants,
                                                 graph_from_data_frame(df_descendants)))
-      }
+      # }
     }
   }
   else

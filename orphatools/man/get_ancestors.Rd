@@ -7,7 +7,6 @@
 get_ancestors(
   orphaCode,
   class_data = NULL,
-  gen = Inf,
   codes_only = FALSE,
   shortcuts = FALSE
 )
@@ -16,8 +15,6 @@ get_ancestors(
 \item{orphaCode}{The numerical Orpha code}
 
 \item{class_data}{The classification data to consider. If NULL, find all classifications containing the given Orpha code. Ancestors may differ depending on the chosen classification.}
-
-\item{gen}{Number of generations to take into account. If Inf, the default, all generations are included.}
 
 \item{codes_only}{If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph}
 

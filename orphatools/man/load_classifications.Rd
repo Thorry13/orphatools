@@ -7,7 +7,7 @@
 load_classifications()
 }
 \value{
-All classifications as xml2 objects
+All classifications as dataframes
 }
 \description{
 Load the 33 classifications given in the Orphanet nomenclature pack

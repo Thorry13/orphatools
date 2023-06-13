@@ -7,7 +7,6 @@
 get_descendants(
   orphaCode,
   class_data = NULL,
-  gen = Inf,
   codes_only = FALSE,
   shortcuts = FALSE
 )
@@ -16,8 +15,6 @@ get_descendants(
 \item{orphaCode}{The numerical Orpha code}
 
 \item{class_data}{The classification data to consider. If NULL, find one automatically. Descendance is independant from classification.}
-
-\item{gen}{Number of generations to take into account. If Inf, the default, all generations are included.}
 
 \item{codes_only}{If FALSE, returns a data.frame object (columns "from" and "to") ready to be converted into a graph}
 
