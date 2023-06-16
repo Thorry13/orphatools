@@ -4,12 +4,7 @@
 \alias{get_common_graph}
 \title{Get a base graph from a codes list, which is basically a graph including the relevant ancestors and the given codes.}
 \usage{
-get_common_graph(
-  codes_list,
-  class_data = NULL,
-  what = "both",
-  shortcuts = FALSE
-)
+get_common_graph(codes_list, class_data = NULL, what = "both")
 }
 \arguments{
 \item{codes_list}{The codes to build the base graph from}
@@ -18,9 +13,6 @@ get_common_graph(
 If NULL, automatically search a classification for each code}
 
 \item{what}{Specify if you want 'ancestors', 'descendants' or 'both'}
-
-\item{shortcuts}{Add shortcuts when looking for ancestors and descendants.
-A shortcut is a direct link between an ancestor and its descendant.}
 }
 \value{
 The built base graph
@@ -35,6 +27,5 @@ codes_list = c('303', '305', '595356')
 common_graph = get_common_graph(codes_list)
 common_graph = get_common_graph(codes_list, class_data = all_class[[1]])
 common_graph = get_common_graph(codes_list, what = 'ancestors')
-common_graph = get_common_graph(codes_list, shortcuts = TRUE)
 
 }

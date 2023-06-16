@@ -21,7 +21,10 @@ read_class = function(path)
       if(length(to) != 0)
         df_temp = list(from=from, to=to)
       return(df_temp)
-    }) %>% bind_rows() %>% as.data.frame()
+    }) %>%
+    bind_rows() %>%
+    distinct() %>%
+    as.data.frame()
 }
 
 
@@ -136,9 +139,9 @@ find_leaves = function(graph)
 #'
 #' @return A from/to data.frame ready to be converted into a graph, or codes only if asked so
 #' @import magrittr
-#' @importFrom dplyr mutate group_by ungroup bind_rows distinct lag rename left_join
+#' @importFrom dplyr bind_rows distinct filter
 #' @importFrom purrr is_empty
-#' @importFrom igraph graph_from_data_frame as_data_frame add_vertices path make_empty_graph
+#' @importFrom igraph all_simple_paths graph_from_data_frame
 #' @export
 #'
 #' @examples
@@ -151,38 +154,20 @@ find_leaves = function(graph)
 #' df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
 get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts=FALSE)
 {
-  get_ancestors_from_class = function(orphaCode, class_data)
-  {
-    if(!is_in_classif(orphaCode, class_data))
-      return(NULL)
-
-    class_graph = graph_from_data_frame(class_data)
-    root = find_roots(class_graph)
-    df_ancestors_class = all_simple_paths(class_graph, root, orphaCode) %>%
-      lapply(function(path0){
-        make_empty_graph(directed=T) %>%
-          add_vertices(length(path0), attr=list(name=names(path0))) +
-          path(names(path0))
-      }) %>%
-      lapply(as_data_frame, what='edges') %>%
-      bind_rows %>%
-      distinct()
-
-    return(df_ancestors_class)
-  }
-
+  orphaCode = as.character(orphaCode)
   # Use specified classification or all of them if NULL was given
   if(is.null(class_data))
-    all_class = load_classifications()
-  else
-    all_class = list(class_data)
+    class_data = load_classifications() %>% bind_rows() %>% distinct()
 
-  # Find ancestors in each classification
-  df_ancestors = all_class %>%
-    lapply(function(current_class) get_ancestors_from_class(orphaCode, current_class)) %>%
-    bind_rows() %>%
-    distinct()
-  ancestors = unique(df_ancestors$from)
+  # Find ancestors in classification
+  if(!is_in_classif(orphaCode, class_data))
+      return(NULL)
+
+  class_graph = graph_from_data_frame(class_data)
+  roots = find_roots(class_graph)
+  ancestors =
+    lapply(roots,function(root) all_simple_paths(class_graph, root, orphaCode)) %>%
+    unlist() %>% names() %>% unique() %>% setdiff(orphaCode)
 
   if(length(ancestors) == 0)
     return(NULL)
@@ -191,6 +176,8 @@ get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts
     return(ancestors)
   else
   {
+    df_ancestors = class_data %>%
+      filter(from %in% ancestors, to %in% c(ancestors, orphaCode))
     # Shortcuts are useful aggregated information from descendants to ancestors
     if(shortcuts)
     {
@@ -204,7 +191,6 @@ get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts
 }
 
 
-
 #' Get descendants recusevily from a given Orpha code
 #'
 #' @param orphaCode The numerical Orpha code
@@ -214,8 +200,8 @@ get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts
 #'
 #' @return A from/to data.frame ready to be converted into a graph, or codes only if asked so
 #' @import magrittr
-#' @importFrom dplyr bind_rows distinct
-#' @importFrom igraph graph_from_data_frame as_data_frame add_vertices path make_empty_graph
+#' @importFrom dplyr bind_rows distinct filter
+#' @importFrom igraph graph_from_data_frame all_simple_paths
 #' @export
 #'
 #' @examples
@@ -224,6 +210,7 @@ get_ancestors = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts
 #' df_descendants = get_descendants(code)
 get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcuts=FALSE)
 {
+  orphaCode = as.character(orphaCode)
   # If no classification was specified, find one containing the given Orpha code
   if(is.null(class_data))
   {
@@ -239,18 +226,19 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
   if(!is_in_classif(orphaCode, class_data))
     return(NULL)
 
-  df_descendants = class_data %>%
+  descendants = class_data %>%
     graph_from_data_frame() %>%
     all_simple_paths(orphaCode) %>%
-    lapply(function(path0)
-      make_empty_graph(directed=T) %>%
-        add_vertices(length(path0), attr = list(name=names(path0))) +
-        path(names(path0))
-      ) %>%
-    lapply(as_data_frame, what='edges') %>%
-    bind_rows() %>%
-    distinct()
-  descendants = unique(df_descendants$to)
+    unlist() %>% names() %>% unique() %>% setdiff(orphaCode)
+    # lapply(function(path0)
+    #   make_empty_graph(directed=T) %>%
+    #     add_vertices(length(path0), attr = list(name=names(path0))) +
+    #     path(names(path0))
+    #   ) %>%
+    # lapply(as_data_frame, what='edges') %>%
+    # bind_rows() %>%
+    # distinct()
+  # descendants = unique(df_descendants$to)
 
   if(length(descendants) == 0)
     return(NULL)
@@ -260,6 +248,8 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
     return(descendants)
   else
   {
+    df_descendants = class_data %>%
+      filter(to %in% descendants, from %in% c(orphaCode, descendants))
     # Shortcuts are useful to aggregate information from descendants to ancestors
     if(shortcuts)
     {
@@ -286,22 +276,15 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
 #'
 #' @examples
 #' code = '303'
-#' descendants_codes = get_descendants(code, codes_only=TRUE)
-#' df_descendants = get_descendants(code)
-get_siblings = function(orphaCode, class_data=NULL, codes_only=FALSE)
+#' siblings = get_siblings(code)
+get_siblings = function(orphaCode, class_data=NULL, codes_only=T)
 {
-  parents = get_ancestors(orphaCode,
-                             class_data=class_data) %>%
-    filter(to==orphaCode) %>%
-    pull(from)
+  if(is.null(class_data))
+    class_data = load_classifications() %>% bind_rows()
 
-  df_siblings = lapply(parents,
-                       get_descendants,
-                       class_data=class_data) %>%
-    bind_rows() %>%
-    filter(from %in% parents) %>%
-    distinct() %>%
-    as.data.frame()
+  parents = class_data %>% filter(to==orphaCode) %>% pull(from)
+
+  df_siblings = class_data %>% filter(from %in% parents, !to != orphaCode)
 
   if(codes_only)
     return(setdiff(unique(df_siblings$to), orphaCode))
@@ -309,19 +292,18 @@ get_siblings = function(orphaCode, class_data=NULL, codes_only=FALSE)
     return(df_siblings)
 }
 
+
 #' Get a base graph from a codes list, which is basically a graph including the relevant ancestors and the given codes.
 #'
 #' @param codes_list The codes to build the base graph from
 #' @param class_data The Orpha classification to consider to find the ancestors.
 #' If NULL, automatically search a classification for each code
 #' @param what Specify if you want 'ancestors', 'descendants' or 'both'
-#' @param shortcuts Add shortcuts when looking for ancestors and descendants.
-#' A shortcut is a direct link between an ancestor and its descendant.
 #'
 #' @return The built base graph
 #' @import magrittr
-#' @importFrom igraph graph_from_data_frame as_data_frame make_empty_graph
-#' @importFrom dplyr bind_rows distinct n_distinct
+#' @importFrom igraph graph_from_data_frame V induced_subgraph all_simple_paths
+#' @importFrom dplyr bind_rows distinct arrange desc filter first
 #' @importFrom stats na.omit
 #' @importFrom purrr keep is_empty
 #' @export
@@ -333,57 +315,67 @@ get_siblings = function(orphaCode, class_data=NULL, codes_only=FALSE)
 #' common_graph = get_common_graph(codes_list)
 #' common_graph = get_common_graph(codes_list, class_data = all_class[[1]])
 #' common_graph = get_common_graph(codes_list, what = 'ancestors')
-#' common_graph = get_common_graph(codes_list, shortcuts = TRUE)
 #'
-get_common_graph = function(codes_list, class_data=NULL, what='both', shortcuts=FALSE)
-{
+get_common_graph = function(codes_list, class_data=NULL, what='both'){
   codes_list = na.omit(codes_list)
   if(what=='both')
     what = c('ancestors', 'descendants')
+  if(is.null(class_data))
+    class_data = load_classifications() %>% bind_rows() %>% distinct()
 
-  if('ancestors' %in% what)
-  {
-    df_ancestors_list = codes_list %>%
-      lapply(function(code) get_ancestors(code,
-                                          class_data,
-                                          shortcuts=shortcuts)) %>%
-      keep(function(df) !is_empty(df))
-    graph_ancestors = df_ancestors_list %>%
-      lapply(graph_from_data_frame) %>%
-      merge_graphs()
-  }
-  else
-    graph_ancestors = make_empty_graph() %>%
-      add_vertices(n_distinct(codes_list),
-                   name = unique(codes_list))
+  class_graph = graph_from_data_frame(class_data)
 
+  df_y = class_graph %>%
+    vertical_positions() %>%
+    filter(name %in% codes_list)
 
-  if('descendants' %in% what)
-  {
-    graph_descendants = NULL
-    for(current_code in codes_list)
-    {
-      # if(is.null(graph_descendants) ||
-      #    # !current_code %in% as.numeric(names(V(graph_descendants))))
-      #    !current_code %in% names(V(graph_descendants)))
-      # {
-        df_descendants = get_descendants(current_code,
-                                         class_data,
-                                         shortcuts=shortcuts)
-        if(!is_empty(df_descendants))
-          graph_descendants = merge_graphs(list(graph_descendants,
-                                                graph_from_data_frame(df_descendants)))
-      # }
+  all_ancestors = NULL
+  all_descendants = NULL
+  if('ancestors' %in% what){
+    if(length(codes_list) < 100){
+      df_y_copy = df_y %>% arrange(desc(y))
+      # for(orphaCode in df_y$name){
+      while(nrow(df_y_copy)){
+        orphaCode = first(df_y_copy$name)
+        ancestors = get_ancestors(orphaCode, class_data, codes_only=T)
+        all_ancestors = unique(c(all_ancestors, ancestors))
+        df_y_copy = df_y_copy %>% filter(!name %in% c(orphaCode, all_ancestors))
+      }
+    }else{
+      roots = find_roots(class_graph)
+      all_ancestors = roots %>%
+        lapply(function(root){
+                # all_paths = all_simple_paths(class_graph, from = root)
+                # all_leaves = all_paths %>% sapply(function(x) x %>% names() %>% last()) %>% unique()
+                # index = which(all_leaves %in% codes_list)
+                # selected_paths = all_paths[index]
+                selected_paths =
+                  all_simple_paths(class_graph, from=root,
+                                   to=intersect(codes_list, names(V(class_graph))))
+                all_ancestors = selected_paths %>% unlist() %>% names() %>%
+                  unique() %>% setdiff(codes_list)
+                }) %>%
+        unlist() %>% unique()
     }
   }
-  else
-    graph_descendants = make_empty_graph() %>%
-      add_vertices(n_distinct(codes_list),
-                   name = unique(codes_list))
+  if('descendants' %in% what){
+    df_y_copy = df_y %>% arrange(y)
+    # for(orphaCode in df_y$name){
+    while(nrow(df_y_copy)){
+      orphaCode = first(df_y_copy$name)
+      # descendants = get_descendants(orphaCode, class_data, codes_only=T)
+      descendants = all_simple_paths(class_graph, from=orphaCode) %>%
+        unlist() %>% names() %>% unique() %>% setdiff(codes_list)
+      all_descendants = unique(c(all_descendants, descendants))
+      df_y_copy = df_y_copy %>% filter(!name %in% c(orphaCode, all_descendants))
+    }
+  }
 
-  graph = merge_graphs(graphs_list = list(graph_ancestors, graph_descendants))
+  all_codes = unique(c(all_ancestors, codes_list, all_descendants))
+  v_index = which(names(V(class_graph)) %in% all_codes)
+  graph_induced = induced_subgraph(class_graph, vids = v_index)
 
-  return(graph)
+  return(graph_induced)
 }
 
 
@@ -580,7 +572,8 @@ complete_family = function(codes_list, class_data=NULL)
                                   what = 'ancestors')
   graph_siblings = lapply(codes_list,
                        get_siblings,
-                       class_data=class_data) %>%
+                       class_data=class_data,
+                       codes_only=FALSE) %>%
     bind_rows() %>%
     graph_from_data_frame()
 

@@ -109,8 +109,7 @@ update_nomenclature_pack = function(orpha_pack_nomenclature_path,
 #' @examples
 #' nom_data = load_nomenclature()
 #'
-load_nomenclature = function()
-{
+load_nomenclature = function(){
   extdata_path = system.file('extdata', package='orphatools')
   nom_data_path = file.path(extdata_path, 'nom_data.RDS')
 
@@ -133,7 +132,6 @@ See `upload_nomenclature_pack` or consider reisntalling orphatools package.'))
 #' @examples
 #' df_synonyms = load_synonyms()
 load_synonyms = function(){
-
   extdata_path = system.file('extdata', package='orphatools')
   synonyms_path = file.path(extdata_path, 'df_synonyms.RDS')
 
@@ -163,8 +161,7 @@ See `upload_nomenclature_pack` or consider reisntalling orphatools package.'))
 #' nom_data = load_nomenclature()
 #' nom_data_new = translate_properties(nom_data)
 #'
-translate_properties = function(nom_data)
-{
+translate_properties = function(nom_data){
   nom_data_translated = nom_data %>%
     mutate(
       flagValue = flagValue_literal[flagValue] %>% unname,
@@ -175,42 +172,48 @@ translate_properties = function(nom_data)
 }
 
 
-#' Translate a flagValue column into human readable data
+#' Get the flag value of a given ORPHA code
 #'
-#' @param V, Vector to translate
+#' @param orphaCode, ORPHA code to get the flag value from
 #'
-#' @return The dataframe with the translated column
+#' @return The corresponding flag value
 #' @export
 #'
-translate_flag_values = function(V)
-{
-  new_V = flagValue_literal[V]
-  return(new_V)
+get_flag_value = function(code){
+  flagValue = load_nomenclature() %>%
+    translate_properties() %>%
+    filter(orphaCode==code) %>%
+    pull(flagValue)
+  return(flagValue)
 }
 
-#' Translate a disorderType column into human readable data
+#' Get the disorder type of a given ORPHA code
 #'
-#' @param V, Vector to translate
+#' @param orphaCode, ORPHA codeto get the disorder type from
 #'
-#' @return The dataframe with the translated column
+#' @return The corresponding disorder type
 #' @export
 #'
-translate_disorder_types = function(V)
-{
-  new_V = disorderType_literal[V]
-  return(new_V)
+get_disorder_type = function(code){
+  disorderType = load_nomenclature() %>%
+    translate_properties() %>%
+    filter(orphaCode==code) %>%
+    pull(disorderType)
+  return(disorderType)
 }
 
 
-#' Translate a classLevel column into human readable data
+#' Get the classification level of a given ORPHA code
 #'
-#' @param V, Vector to translate
+#' @param orphaCode, ORPHA code to get the classification level from
 #'
-#' @return The dataframe with the translated column
+#' @return The corresponding classification level
 #' @export
 #'
-translate_class_level = function(V)
-{
-  new_V = classLevel_literal[V]
-  return(new_V)
+get_classification_level = function(code){
+  classLevel = load_nomenclature() %>%
+    translate_properties() %>%
+    filter(orphaCode==code) %>%
+    pull(classLevel)
+  return(classLevel)
 }

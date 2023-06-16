@@ -102,7 +102,7 @@ kable(df_descendants, 'html')
 ## Find siblings codes
 ```{r siblings1}
 code = '79361'
-siblings_codes = get_siblings(code, codes_only=TRUE)
+siblings_codes = get_siblings(code)
 print(siblings_codes)
 ```
 
@@ -159,6 +159,7 @@ common_graph = get_common_graph(codes_list, what = 'descendants')
 plot(common_graph, layout=layout_tree)
 ```
 
+## Color graphs
 You can emphasize codes on the plotted graph to locate where are the original codes
 with `color_graph` function.
 `color_graph` enables also the visualization of the classification 

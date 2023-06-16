@@ -188,6 +188,7 @@ horizontal_positions = function(graph, df_y, h_size, root_node=NULL)
 #' @import magrittr
 #' @importFrom dplyr left_join group_by summarize bind_rows filter select
 #' @importFrom igraph as_data_frame
+#' @importFrom stringr str_split_1 str_length
 #'
 
 #' @return
@@ -218,7 +219,9 @@ horizontal_sizes = function(graph, df_y, root_node=NULL)
     # Provided root_node may be a leaf of the graph
     if(!root_node %in% df_edges$from)
     {
-      return(data.frame(name=root_node, size=1))
+      max_length = root_node %>% str_split_1('\n') %>% str_length() %>% max()
+      size = max(10, max_length)
+      return(data.frame(name=root_node, size=size))
     }
     else
     {

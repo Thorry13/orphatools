@@ -4,7 +4,7 @@
 \alias{get_siblings}
 \title{Get siblings of an Orpha code.}
 \usage{
-get_siblings(orphaCode, class_data = NULL, codes_only = FALSE)
+get_siblings(orphaCode, class_data = NULL, codes_only = T)
 }
 \arguments{
 \item{orphaCode}{The numerical Orpha code}
@@ -21,6 +21,5 @@ Get siblings of an Orpha code.
 }
 \examples{
 code = '303'
-descendants_codes = get_descendants(code, codes_only=TRUE)
-df_descendants = get_descendants(code)
+siblings = get_siblings(code)
 }

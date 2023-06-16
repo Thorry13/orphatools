@@ -8,7 +8,6 @@ group_by_code(
   .data,
   ...,
   class_data = NULL,
-  include_descendants = TRUE,
   force_nodes = NULL,
   code_col = "code"
 )
@@ -19,8 +18,6 @@ group_by_code(
 \item{...}{Additional parameters to transmit to the dplyr group_by function}
 
 \item{class_data}{The classification data to consider. If NULL, automatically search a classification for each code}
-
-\item{include_descendants}{If TRUE (default), for each code every descendants of this code are included in its group}
 
 \item{force_nodes}{function usually uses Orpha codes present in the original dataframe only,
 but you can force aggregation on some additional nodes here}
