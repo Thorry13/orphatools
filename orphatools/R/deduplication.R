@@ -9,7 +9,7 @@
 #'
 #' @return Results of the group_by operation
 #' @import magrittr
-#' @importFrom dplyr bind_rows group_by arrange desc distinct summarize rename
+#' @importFrom dplyr bind_rows group_by arrange desc distinct summarize rename mutate if_else left_join
 #' @importFrom tidyr unnest
 #' @importFrom igraph graph_from_data_frame
 #' @export
@@ -39,8 +39,6 @@ group_by_code = function(.data, ..., class_data=NULL, force_nodes=NULL, code_col
                        from=root,
                        to=intersect(names(V(class_graph)), codes_list))) %>%
     unlist(recursive = F)
-
-  # all_paths = all_simple_paths(class_graph, from = root, to = intersect(names(V(class_graph)), codes_list))
   df_ancestors = cbind(all_paths) %>% as.data.frame() %>%
     mutate(
       all_paths = lapply(all_paths, function(path) names(path[names(path) %in% all_codes])),
@@ -52,7 +50,9 @@ group_by_code = function(.data, ..., class_data=NULL, force_nodes=NULL, code_col
   df_grouped = group_by(.data, !!sym(code_col), ...)
   groups = attr(df_grouped, 'groups') %>%
     left_join(df_ancestors, by=code_col) %>%
-    unnest(all_ancestors) %>%
+    unnest(all_ancestors, keep_empty = TRUE) %>%
+    mutate(all_ancestors =
+             if_else(is.na(all_ancestors), .data[[code_col]], all_ancestors)) %>%
     group_by(all_ancestors) %>%
     summarize(.rows = list(unique(unlist(.rows)))) %>%
     rename(!!code_col := all_ancestors)
