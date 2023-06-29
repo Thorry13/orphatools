@@ -9,9 +9,9 @@
 #'
 #' @return Results of the group_by operation
 #' @import magrittr
-#' @importFrom dplyr bind_rows group_by arrange desc distinct summarize rename mutate if_else left_join
+#' @importFrom dplyr bind_rows group_by arrange desc distinct summarize rename mutate if_else left_join last relocate sym select
 #' @importFrom tidyr unnest
-#' @importFrom igraph graph_from_data_frame
+#' @importFrom igraph graph_from_data_frame all_simple_paths
 #' @export
 #'
 #' @examples
@@ -50,13 +50,48 @@ group_by_code = function(.data, ..., class_data=NULL, force_nodes=NULL, code_col
   df_grouped = group_by(.data, !!sym(code_col), ...)
   groups = attr(df_grouped, 'groups') %>%
     left_join(df_ancestors, by=code_col) %>%
+    relocate(all_ancestors, .before = code_col) %>%
     unnest(all_ancestors, keep_empty = TRUE) %>%
     mutate(all_ancestors =
              if_else(is.na(all_ancestors), .data[[code_col]], all_ancestors)) %>%
-    group_by(all_ancestors) %>%
+    select(-all_of(code_col)) %>%
+    group_by(across(c(-.rows))) %>%
     summarize(.rows = list(unique(unlist(.rows)))) %>%
     rename(!!code_col := all_ancestors)
-
   attr(df_grouped, 'groups') = groups
+  class(df_grouped) = c('orpha_df', class(df_grouped))
+
   return(df_grouped)
+}
+
+
+#' Overridden version of `dplyr::mutate` for dataframes grouped
+#' with `group_by_code` function.
+#'
+#' @param df Dataframe to mutate
+#' @param ... arguments for dplyr::mutate
+#'
+#' @return The mutated dataframe
+#' @import magrittr
+#' @importFrom dplyr group_vars summarize mutate left_join select ends_with
+#' @export
+#'
+#' @examples
+#' library(magrittr)
+#' df = data.frame(code = c('303', '79408', '79408'), val = 1:3)
+#' # df %>% group_by_code %>% dplyr::mutate(val2 = max(val)) # May rise an error "Can't recycle..."
+#' df %>% group_by_code %>% orphatools::mutate(val2 = max(val)) # Works well
+mutate = function(df, ...){
+  if(any(class(df) == "orpha_df")){
+    old_vars = names(df)
+    keys = group_vars(df)
+    tmp = df %>% summarize(...)
+    df_res = df %>% left_join(tmp, by=keys, suffix=c('.x', '')) %>% select(-ends_with('.x'))
+    new_vars = setdiff(names(df_res), old_vars)
+    df_res = df_res[,c(old_vars, new_vars)]
+    class(df_res) = c('orpha_df', class(df_res))
+    return(df_res)
+  }
+  else
+    return(df %>% dplyr::mutate(...))
 }
