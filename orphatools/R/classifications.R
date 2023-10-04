@@ -280,11 +280,11 @@ get_descendants = function(orphaCode, class_data=NULL, codes_only=FALSE, shortcu
 get_siblings = function(orphaCode, class_data=NULL, codes_only=T)
 {
   if(is.null(class_data))
-    class_data = load_classifications() %>% bind_rows()
+    class_data = load_classifications() %>% bind_rows() %>% distinct()
 
   parents = class_data %>% filter(to==orphaCode) %>% pull(from)
 
-  df_siblings = class_data %>% filter(from %in% parents, !to != orphaCode)
+  df_siblings = class_data %>% filter(from %in% parents, to != orphaCode)
 
   if(codes_only)
     return(setdiff(unique(df_siblings$to), orphaCode))

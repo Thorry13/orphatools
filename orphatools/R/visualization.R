@@ -414,8 +414,11 @@ color_graph = function(graph, emphasize_nodes=NULL, display_class_levels=TRUE)
       pull(classLevel)
 
     # Color nodes
+    graph = set_vertex_attr(graph, 'classLevel', index=class_levels == 'Group', 'Group')
     graph = set_vertex_attr(graph, 'color', index=class_levels == 'Group', '#4169E1') # royalblue1
+    graph = set_vertex_attr(graph, 'classLevel', index=class_levels == 'Disorder', 'Disorder')
     graph = set_vertex_attr(graph, 'color', index=class_levels == 'Disorder', '#7CCD7C') # palegreen3
+    graph = set_vertex_attr(graph, 'classLevel', index=class_levels == 'Subtype', 'Subtype')
     graph = set_vertex_attr(graph, 'color', index=class_levels == 'Subtype', '#CD96CD') # plum3
   }
 
