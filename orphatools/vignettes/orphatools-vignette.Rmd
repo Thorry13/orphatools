@@ -191,7 +191,13 @@ new_graph = complete_family(codes_list) %>%
   color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
 
+# Restriction to a specific classification
 new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']]) %>% 
+  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
+plot(new_graph, layout=layout_tree)
+
+# Include parents only
+new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']], include_ancestors = FALSE) %>% 
   color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
 plot(new_graph, layout=layout_tree)
 ```

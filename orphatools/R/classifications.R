@@ -565,20 +565,21 @@ subtype_to_disorder = function(subtypeCode, class_data=NULL)
 #'
 #' new_graph = complete_family(codes_list)
 #' new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
-complete_family = function(codes_list, class_data=NULL)
+complete_family = function(codes_list, class_data=NULL, include_ancestors = T)
 {
-  graph_ancestors = get_common_graph(codes_list,
-                                  class_data=class_data,
-                                  what = 'ancestors')
-  graph_siblings = lapply(codes_list,
+  if(is.null(class_data))
+    class_data = load_classifications() %>% bind_rows() %>% distinct()
+
+  what = ifelse(include_ancestors, 'both', 'descendants')
+  all_siblings = lapply(codes_list,
                        get_siblings,
                        class_data=class_data,
-                       codes_only=FALSE) %>%
-    bind_rows() %>%
-    graph_from_data_frame()
+                       codes_only=TRUE) %>%
+    unlist() %>% unique()
+  all_parents = class_data %>% filter(to %in% codes_list) %>% pull(from) %>% unique()
+  new_codes_list = unique(c(codes_list, all_parents, all_siblings))
 
-  graph = merge_graphs(list(graph_ancestors, graph_siblings))
-
+  graph = get_common_graph(new_codes_list, class_data=class_data, what = what)
   return(graph)
 }
 

@@ -6,7 +6,7 @@
 the graph of the completed family. It is recommended to use the \code{color_graph}
 function afterwards to visualize which codes were added.}
 \usage{
-complete_family(codes_list, class_data = NULL)
+complete_family(codes_list, class_data = NULL, include_ancestors = T)
 }
 \arguments{
 \item{codes_list}{The codes list to extend}
