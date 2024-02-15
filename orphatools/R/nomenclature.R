@@ -5,6 +5,7 @@ flagValue_literal = c('1'='Active',
                       '8208'='Inactive: Obsolete',
                       '9216'='Inactive: Obsolete',
                       '8225'='Inactive: Non rare in Europe')
+active_flag_values = c('1', '129', '513')
 disorderType_literal = c('36561'='Category',
                          '21436'='Clinical group',
                          '21394'='Disease',
@@ -59,6 +60,20 @@ update_nomenclature_pack = function(orpha_pack_nomenclature_path,
       select(-count)
   }
 
+  find_associations = function(disorder_node){
+    if(disorder_node$FlagValue[[1]] %in% active_flag_values | attr(disorder_node$DisorderDisorderAssociationList, 'count') == "0"){
+      return(NULL)
+    }
+    else{
+      df_association = data.frame(
+        orphaCode = disorder_node$OrphaCode[[1]],
+        associationType = sapply(disorder_node$DisorderDisorderAssociationList, \(x) attr(x$DisorderDisorderAssociationType, 'id')) %>% unname(),
+        associatedDisorder = sapply(disorder_node$DisorderDisorderAssociationList, \(x) x$TargetDisorder$OrphaCode[[1]]) %>% unname()
+      )
+      return(df_association)
+    }
+  }
+
   nomenclature_path = file.path(orpha_pack_nomenclature_path, nomenclature_xml_file)
   classifications_path = file.path(orpha_pack_nomenclature_path, classifications_folder)
   if(file.exists(nomenclature_path) & file.exists(classifications_path)){
@@ -76,6 +91,10 @@ update_nomenclature_pack = function(orpha_pack_nomenclature_path,
       lapply(find_synonyms) %>%
       bind_rows()
 
+    df_associations = nomenclature_data_raw[[1]][[2]] %>%
+      lapply(find_associations) %>%
+      bind_rows()
+
     rm(nomenclature_data_raw)
 
     # Find classifications
@@ -89,6 +108,7 @@ update_nomenclature_pack = function(orpha_pack_nomenclature_path,
     saveRDS(nomenclature_data, file.path(extdata_path, 'nom_data.RDS'))
     saveRDS(df_synonyms, file.path(extdata_path, 'df_synonyms.RDS'))
     saveRDS(all_class, file.path(extdata_path, 'all_class.RDS'))
+    saveRDS(df_associations, file.path(extdata_path, 'associations.RDS'))
   }
   else
     stop(simpleError('Invalid parameters.'))
@@ -118,7 +138,7 @@ load_nomenclature = function(){
   else
     stop(simpleError(
 'Loading of nomenclature data failed. Internal files might be broken.
-See `upload_nomenclature_pack` or consider reisntalling orphatools package.'))
+See `update_nomenclature_pack` or consider reisntalling orphatools package.'))
 
   return(nom_data)
 }
@@ -140,9 +160,30 @@ load_synonyms = function(){
   else
     stop(simpleError(
 'Loading of synonyms failed. Internal files might be broken.
-See `upload_nomenclature_pack` or consider reisntalling orphatools package.'))
+See `update_nomenclature_pack` or consider reisntalling orphatools package.'))
 
   return(df_synonyms)
+}
+
+#' Load for each obsolete or deprecated ORPHA code the corresponding association,
+#' which means the ORPHA code it was moved to or referred to
+#'
+#' @return A data.frame object giving the inactive ORPHA codes, the corresponding associations with the association type
+#' @export
+#'
+#' @examples
+load_associations = function(){
+  extdata_path = system.file('extdata', package='orphatools')
+  associations_path = file.path(extdata_path, 'associations.RDS')
+
+  if(file.exists(associations_path))
+    df_associations = readRDS(associations_path)
+  else
+    stop(simpleError(
+'Loading of associations failed. Internal files might be broken.
+See `update_nomenclature_pack` or consider reisntalling orphatools package.'))
+
+  return(df_associations)
 }
 
 
