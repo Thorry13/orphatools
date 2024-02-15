@@ -329,7 +329,9 @@ assign_indent_index = function(df, current_code = NULL, current_index = '')
 
   # Compute index for each child (and their own children by recursivity) and compile results
   N_children = length(current_children)
-  children_index = paste(current_index, 1:N_children %>% as.character(), sep='.')
+  n_digits = floor(log10(N_children)) + 1
+  conv_spec = paste0('%0',n_digits, 'd')
+  children_index = paste(current_index, sprintf(conv_spec, 1:N_children), sep='.')
 
   df_index = lapply(1:N_children,
                     function(i) assign_indent_index(df, current_children[i], children_index[i])) %>%
