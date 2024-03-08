@@ -151,12 +151,9 @@ group_by.orpha_df = function(.data, ...){
       rename(!!code_col := all_ancestors)
 
     attr(df_grouped, 'groups') = groups
-    class(df_grouped) = c('grouped_orpha_df', 'orpha_df', class(df_grouped))
-  }
-  else{
-    class(df_grouped) = c('orpha_df', class(df_grouped))
-  }
 
+  }
+  class(df_grouped) = c('grouped_orpha_df', 'orpha_df', class(df_grouped))
   return(df_grouped)
 }
 
