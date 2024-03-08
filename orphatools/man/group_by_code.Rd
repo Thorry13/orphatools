@@ -2,7 +2,7 @@
 % Please edit documentation in R/deduplication.R
 \name{group_by_code}
 \alias{group_by_code}
-\title{A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.}
+\title{\link{deprecated} A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.}
 \usage{
 group_by_code(
   .data,
@@ -28,7 +28,7 @@ but you can force aggregation on some additional nodes here}
 Results of the group_by operation
 }
 \description{
-A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
+\link{deprecated} A common group_by operation to take descendants of the present Orpha codes into account in the aggregation.
 }
 \examples{
 library(magrittr)

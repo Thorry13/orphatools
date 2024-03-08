@@ -44,7 +44,16 @@ subtype_to_disorder(subtypeCode = '158676') # 158676 is a subtype of disorder
 subtype_to_disorder(subtypeCode = '303') # 303 is a group of disorder
 get_lowest_groups(orphaCode = '158676')
 ```
+It is not recommended to use `subtype_to_disorder` on multiple ORPHAcodes because of efficiency issues.
+For a general "rolling up" operation, you will probably need to :
 
+1. convert your data frame to an orpha_df object. The usage of _force_nodes_ argument allows you to make appear any OPRHA code you need (like disorder codes), even if they are not present in data (but the subtypes are).
+
+2. `group_by` and `summarize`/`mutate`.
+
+3. Filter disorder codes.
+
+See section below about "Counting code" for more details.
 
 # Ancestors
 ## Find ancestors codes
@@ -119,7 +128,6 @@ kable(df_siblings, 'html')
 df_siblings = get_siblings(code, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
 kable(df_siblings, 'html')
 ```
-
 
 # Visualization
 ## Plots
@@ -202,39 +210,92 @@ new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassifica
 plot(new_graph, layout=layout_tree)
 ```
 
-# Counting codes
+# Aggregation operations
+
+For a hierarchical structure like the ORPHA trees, you will probably need to take codes dependencies into account.
+Let's consider the simplified structure as the following :
+
+![](raw_structure.png)
+
+In many cases, your data operations would lead you to something like :
+
 ```{r counting1}
 df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
                          code = c('303', '158673', '595356', '305', '79406', '79406', '595356'))
 kable(df_patients, 'html')
 ```
+How many patients can be gathered for each ORPHAcode ?
 
-## Naive counting method
+## Naive aggregation
+The basic grouping operation will consider each ORPHAcode as independent.
+
+![](naive_grouping.png)
+
+The naive counting method will then giving you the following results.
 ```{r}
 df_counts = df_patients %>% group_by(code) %>% count() %>% as.data.frame()
 kable(df_counts, 'html')
 ```
 
 
-## New counting method
-#### Without deduplication
+## New aggregation
+Converting your data frame to an `orpha_df` object will change the _group_by_ behavior on data :
+
+![](orpha_df_grouping.png)
+
+You can observe the direct effect on results of such a method :
+
 ```{r counting2}
-df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame()
+df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame() # Deprecated
+df_counts = df_patients %>% orpha_df(orphaCode_col = 'code') %>% group_by(code) %>% count() %>% as.data.frame()
 kable(df_counts, 'html')
 ```
+You might also want to count distinct patients instead of all rows present in data :
 
-#### With deduplication
 ```{r counting3}
-df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
+df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame() # Deprecated
+df_counts = df_patients %>% orpha_df(orphaCode_col = 'code') %>% group_by(code) %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
 kable(df_counts, 'html')
 ```
 
-### Different column names
+This also works with `mutate`:
 
-Method works if *code_col* parameter is not 'code' :
+```{r counting-mutate}
+df_ext = df_patients %>% orpha_df(orphaCode_col = 'code') %>% group_by(code) %>% mutate.grouped_orpha_df(n_included = n_distinct(patient_id)) %>% as.data.frame()
+kable(df_ext, 'html')
+```
 
-```{r counting4}
-df_counts = df_patients %>% rename('orphaCode'='code') %>% group_by_code(code_col='orphaCode') %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
+If your interest is focused on disorders only, keep in mind that `subtype_to_disorder` is unadvised, for computing reasons.
+The method presented in this section is considerably more efficient when the sample size increases.
+Then you simply can filter disorder codes to get the desired result.
+
+```{r rolling_up_codes}
+nom_data = load_nomenclature() %>% translate_properties() %>% select(orphaCode, classLevel)
+df_counts = df_patients %>% 
+  orpha_df(orphaCode_col = 'code') %>%
+  group_by(code) %>%
+  summarize(n = n_distinct(patient_id)) %>% 
+  left_join(nom_data, by=c('code'='orphaCode')) %>%
+  filter(classLevel == 'Disorder') %>%
+  as.data.frame()
 kable(df_counts, 'html')
 ```
+
+Finally some desired ORPHAcode might still be missing in the results. 
+The main reason is the absence of any of this code in data, even if their subtypes are mentioned.
+In these cases, the _force_nodes_ argument is what you want :
+
+```{r}
+nom_data = load_nomenclature() %>% translate_properties() %>% select(orphaCode, classLevel)
+df_counts = df_patients %>% 
+  orpha_df(orphaCode_col = 'code', force_nodes = 231568) %>%
+  group_by(code) %>%
+  summarize(n = n_distinct(patient_id)) %>% 
+  left_join(nom_data, by=c('code'='orphaCode')) %>%
+  filter(classLevel == 'Disorder') %>%
+  as.data.frame()
+kable(df_counts, 'html')
+```
+
+
 

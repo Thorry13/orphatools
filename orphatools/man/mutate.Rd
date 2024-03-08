@@ -2,7 +2,7 @@
 % Please edit documentation in R/deduplication.R
 \name{mutate}
 \alias{mutate}
-\title{Overridden version of \code{dplyr::mutate} for dataframes grouped
+\title{\link{deprecated} Overridden version of \code{dplyr::mutate} for dataframes grouped
 with \code{group_by_code} function.}
 \usage{
 mutate(df, ...)
@@ -16,7 +16,7 @@ mutate(df, ...)
 The mutated dataframe
 }
 \description{
-Overridden version of \code{dplyr::mutate} for dataframes grouped
+\link{deprecated} Overridden version of \code{dplyr::mutate} for dataframes grouped
 with \code{group_by_code} function.
 }
 \examples{
