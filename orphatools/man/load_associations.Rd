@@ -2,15 +2,15 @@
 % Please edit documentation in R/nomenclature.R
 \name{load_associations}
 \alias{load_associations}
-\title{Load for each obsolete or deprecated ORPHA code the corresponding association,
-which means the ORPHA code it was moved to or referred to}
+\title{Load for each obsolete or deprecated ORPHAcode the corresponding association,
+which means the ORPHAcode it was moved to or referred to}
 \usage{
 load_associations()
 }
 \value{
-A data.frame object giving the inactive ORPHA codes, the corresponding associations with the association type
+A data.frame object giving the inactive ORPHAcodes, the corresponding associations with the association type
 }
 \description{
-Load for each obsolete or deprecated ORPHA code the corresponding association,
-which means the ORPHA code it was moved to or referred to
+Load for each obsolete or deprecated ORPHAcode the corresponding association,
+which means the ORPHAcode it was moved to or referred to
 }

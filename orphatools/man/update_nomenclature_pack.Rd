@@ -11,8 +11,8 @@ update_nomenclature_pack(
 )
 }
 \arguments{
-\item{orpha_pack_nomenclature_path}{the path to the uncompressed nomenclature pack.
-You'll find it available here : https://www.orphadata.com/pack-nomenclature/}
+\item{orpha_pack_nomenclature_path}{the path to the uncompressed nomenclature pack,
+available here: https://www.orphadata.com/pack-nomenclature/}
 
 \item{nomenclature_xml_file}{nomenclature file is supposed to be \emph{ORPHAnomenclature_fr.xml}, but might differ.}
 

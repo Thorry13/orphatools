@@ -2,16 +2,16 @@
 % Please edit documentation in R/nomenclature.R
 \name{get_disorder_type}
 \alias{get_disorder_type}
-\title{Get the disorder type of a given ORPHA code}
+\title{Get the disorder type of a given ORPHAcode}
 \usage{
 get_disorder_type(code)
 }
 \arguments{
-\item{orphaCode, }{ORPHA codeto get the disorder type from}
+\item{orphaCode, }{ORPHAcodeto get the disorder type from}
 }
 \value{
 The corresponding disorder type
 }
 \description{
-Get the disorder type of a given ORPHA code
+Get the disorder type of a given ORPHAcode
 }

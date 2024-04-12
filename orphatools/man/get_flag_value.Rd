@@ -2,16 +2,16 @@
 % Please edit documentation in R/nomenclature.R
 \name{get_flag_value}
 \alias{get_flag_value}
-\title{Get the flag value of a given ORPHA code}
+\title{Get the flag value of a given ORPHAcode}
 \usage{
 get_flag_value(code)
 }
 \arguments{
-\item{orphaCode, }{ORPHA code to get the flag value from}
+\item{orphaCode, }{ORPHAcode to get the flag value from}
 }
 \value{
 The corresponding flag value
 }
 \description{
-Get the flag value of a given ORPHA code
+Get the flag value of a given ORPHAcode
 }

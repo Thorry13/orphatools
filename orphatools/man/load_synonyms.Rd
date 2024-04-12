@@ -7,7 +7,7 @@
 load_synonyms()
 }
 \value{
-A data.frame object with three columns : orpha Code, preferred term, synonyms
+A data.frame object with three columns : ORPHAcode, preferred term, synonyms
 }
 \description{
 Load for each orphaCode its list of synonyms from the nomenclature data

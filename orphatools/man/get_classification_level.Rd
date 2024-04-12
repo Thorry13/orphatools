@@ -2,16 +2,16 @@
 % Please edit documentation in R/nomenclature.R
 \name{get_classification_level}
 \alias{get_classification_level}
-\title{Get the classification level of a given ORPHA code}
+\title{Get the classification level of a given ORPHAcode}
 \usage{
 get_classification_level(code)
 }
 \arguments{
-\item{orphaCode, }{ORPHA code to get the classification level from}
+\item{orphaCode, }{ORPHAcode to get the classification level from}
 }
 \value{
 The corresponding classification level
 }
 \description{
-Get the classification level of a given ORPHA code
+Get the classification level of a given ORPHAcode
 }
