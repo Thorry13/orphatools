@@ -4,7 +4,7 @@
 \alias{ungroup.grouped_orpha_df}
 \title{To be documented}
 \usage{
-ungroup.grouped_orpha_df(df)
+\method{ungroup}{grouped_orpha_df}(df)
 }
 \arguments{
 \item{df}{}

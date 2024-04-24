@@ -1,34 +1,3 @@
-#' Read class returns a from/to dataframe associated to a classification
-#'
-#' @param path Path to classification file
-#'
-#' @return A from/to dataframe representing the edges between the classification entities
-#' @import magrittr
-#' @importFrom dplyr bind_rows
-#' @importFrom xml2 read_xml xml_find_first xml_find_all
-#' @export
-read_class = function(path)
-{
-  class_data = read_xml(path)
-
-  # Find classification nodes
-  classification_nodes = xml_find_all(class_data, '//ClassificationNode')
-  df_class = classification_nodes %>%
-    lapply( function(class_node){
-      from = class_node %>% xml_find_first('Disorder/OrphaCode') %>% xml_text() # %>% as.numeric()
-      to = class_node %>% xml_find_all('ClassificationNodeChildList/ClassificationNode/Disorder/OrphaCode') %>% xml_text() # %>% as.numeric()
-      df_temp = NULL
-      if(length(to) != 0)
-        df_temp = list(from=from, to=to)
-      return(df_temp)
-    }) %>%
-    bind_rows() %>%
-    distinct() %>%
-    as.data.frame()
-}
-
-
-
 #' Load the 33 classifications given in the Orphanet nomenclature pack
 #'
 #' @return All classifications as dataframes
