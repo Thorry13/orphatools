@@ -46,6 +46,7 @@ load_genes_synonyms = function(){
 #'
 #' @import magrittr
 #' @importFrom dplyr n_distinct filter select distinct group_by summarize ungroup mutate left_join select tibble
+#' @importFrom stringr str_detect
 #'
 #' @return The updated ORPHAcodes, the same length as the `orpha_codes`.
 #' An ORPHAcode is changed if a single correspondence was found.
@@ -70,7 +71,7 @@ specify_code = function(orpha_codes, hgnc_codes, by=NULL){
   }
 
   df_tmp = load_orpha_genes() %>%
-    filter(associationStatus == 'Assessed', HGNC %in% hgnc_codes) %>%
+    filter(associationStatus == 'Assessed', str_detect(associationType, 'Disease-causing'), HGNC %in% hgnc_codes) %>%
     select(orphaCode, hgnc_code=HGNC) %>%
     distinct() %>%
     orpha_df(orphaCode_col = 'orphaCode', force_nodes = unique(na.omit(orpha_codes))) %>%
