@@ -396,7 +396,8 @@ apply_orpha_indent = function(df, df_classif=NULL, indented_cols=NULL, prefix='i
     left_join(df_index, by='orpha_code' %>% setNames(code_col)) %>%
     mutate(
       index = replace_na(index, '.9999'),
-      n_indent = str_count(index, '\\.'))
+      n_indent = str_count(index, '\\.')) %>%
+    arrange(index)
 
   # Apply indentation
   M = matrix('', nrow = nrow(df), ncol = max(df$n_indent, na.rm = T) + length(indented_cols) - 1)
