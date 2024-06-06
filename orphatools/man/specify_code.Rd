@@ -2,31 +2,101 @@
 % Please edit documentation in R/genes.R
 \name{specify_code}
 \alias{specify_code}
-\title{Find a more precise ORPHAcode according to the provided genes}
+\title{Specify ORPHAcode with gene}
 \usage{
-specify_code(orpha_codes, hgnc_codes, by = NULL)
+specify_code(
+  orpha_codes,
+  genes = NULL,
+  mode = "HGNC",
+  .by = 1:length(orpha_codes)
+)
 }
 \arguments{
-\item{orpha_codes}{The ORPHAcodes to update}
+\item{orpha_codes}{The ORPHAcodes to update. If length is greater than 1, the full set of genes will be applied to each vector element.}
 
-\item{hgnc_codes}{The provided genes}
+\item{genes}{The mutated genes. If given as a list,
+it should be length-compatible with \code{orpha_code}, so that each list element corresponds to one \code{orpha_codes} entry.
+Set the \code{.by} argument properly to apply the right set of genes on each ORPHAcode.}
 
-\item{by}{This argument specifies the groups in which the provided genes should be considered.}
+\item{mode}{Character constant, whether the given genes are \code{"symbol"} or \code{"HGNC"} codes.}
+
+\item{.by}{Optionnaly, the set of mutated genes. The default is to consider each row as independent.
+Set it to NULL or a constant value to apply the full set of \code{genes} to each element of \code{orpha_codes}.
+A warning will be raised if any of the considered sets contains more than 10 elements.}
 }
 \value{
-The updated ORPHAcodes, the same length as the \code{orpha_codes}.
-An ORPHAcode is changed if a single correspondence was found.
+The updated ORPHAcodes, the same length as \code{orpha_codes}.
 }
 \description{
-Find a more precise ORPHAcode according to the provided genes
+Find a more precise ORPHAcode according to the provided mutated genes.
+
+Potential replacement ORPHAcodes will be searched among the descendants of the
+given ORPHAcode.They must be associated to one of the mutated genes given in \code{genes}
+argument. This kind of association is necessarily \code{"Assessed"} and \code{"Disease-causing"}
+according to Orphanet.
+}
+\details{
+Symbols (see \code{\link[=load_genes_synonyms]{load_genes_synonyms()}} to find them all) and HGNC codes are supported,
+let the function know which you chose with the \code{mode} argument.
+
+Specification is applied if and only if a unique potential replacement ORPHAcode was found.
+The function was first meant to be applied to a single ORPHAcode and a set of mutated genes
+found in one individual. However you might want to apply function on data.frame columns
+using \code{tidyverse} functions. This way your single ORPHAcode might be repeated over the full set of
+mutated genes. The operation will then be row-wise and the duplicated ORPHAcodes will be considered
+independently. Ths behavior makes a call on a \code{grouped_df} object unadvised.
+
+You have a couple of options to deal with it:
+\itemize{
+\item Set the \code{.by} argument instead of \code{group_by}.
+\item Use \code{group_by} to \code{\link[=chop]{chop()}} mutated genes into a list-column and \code{ungroup} to make your data row-wise compatible.
+}
+
+See examples below.
 }
 \examples{
 library(dplyr)
-df = tibble(
-  patient_id=c('A', 'A', 'B', 'C', 'D', 'D'),
-  initial_orphaCode = c("65753", "65753", "903", "65753", "65753", "65753"), # CMT1 and von Willebrand
-  hgnc_code = c("16463", "16361", "15714", "26792", "16463", "15714")) # MPZ, VWF and LITAF
 
-df \%>\% mutate(assigned_orphaCode = specify_code(initial_orphaCode, hgnc_code))
-df \%>\% mutate(assigned_orphaCode = specify_code(initial_orphaCode, hgnc_code, by='patient_id'))
+# Basic usage
+orpha_code_cmt1 = 65753
+orpha_code_cmtX = 64747
+
+## Specification possible
+specify_code(orpha_code_cmt1, 'MPZ', mode='symbol') # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
+specify_code(orpha_code_cmt1, c('MPZ', 'POMT1'), mode='symbol') # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
+
+## Specification impossible
+specify_code(orpha_code_cmtX, 'MPZ', mode='symbol') # No ORPHAcode is associated both to CMTX and MPZ
+specify_code(orpha_code_cmt1, 'PMP22', mode='symbol') # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+specify_code(orpha_code_cmt1, c('MPZ', 'PMP22'), mode='symbol') # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+
+## Alternatively with HGNC codes (the default mode)
+specify_code(orpha_code_cmt1, 7225) # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
+specify_code(orpha_code_cmt1, c(7225, 9202)) # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
+specify_code(orpha_code_cmtX, 7225) # No ORPHAcode is associated both to CMTX and MPZ
+specify_code(orpha_code_cmt1, 9118) # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+specify_code(orpha_code_cmt1, c(7225, 9118)) # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+
+# Using dataframes
+df = tibble(
+ patient_id=c('A', 'A', 'B', 'C', 'D', 'D'),
+ initial_orpha_code = c("65753", "65753", "903", "65753", "65753", "65753"), # CMT1 and von Willebrand
+
+## Basic call
+df_spec = df \%>\% mutate(
+  assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol'))
+
+## Grouping may be preferable
+df_spec = df \%>\% mutate(
+  assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol', .by=))
+
+## Equivalent method with genes in a list-column
+df = tibble(
+ patient_id=c('A', 'B', 'C', 'D'),
+ initial_orpha_code = c("65753", "903", "65753", "65753"), # CMT1 and von Willebrand
+  symbol = list(c("MPZ", "LITAF"), "VWF", "LITAF", c("MPZ", "VWF"))) # MPZ, VWF and LITAF
+
+df_spec = df \%>\% group_by(patient_id) \%>\% mutate(
+  assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol'))
+
 }

@@ -1,217 +1,233 @@
 ---
-title: "orphatools-vignette"
-output: rmarkdown::html_vignette
+title: "orphatools (R interface)"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 4
 vignette: >
   %\VignetteIndexEntry{orphatools-vignette}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width=8, fig.height=8
+  fig.width=6, fig.height=4
 )
 ```
 
-```{r setup}
-suppressWarnings(suppressPackageStartupMessages(library(orphatools)))
+```{r, include=FALSE}
 suppressWarnings(suppressPackageStartupMessages(library(kableExtra)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 ```
 
+`orphatools` is an open-source library consisting in using [Orphanet](https://www.orpha.net/) resources
+for efficient computations in R. This vignette provides all needed details for basic and advanced usage in R.
 
-# Orpha code properties
-**Classification Levels reminder** :
+## Getting started
 
-  * Group of disorders : 36540
-  * Disorder : 36547
-  * Subtype of disorder : 36554
+### Installation
+No available installation from CRAN yet.
+```{r install}
 
+```
+---
 
-```{r props}
-nom_data = load_nomenclature()
-kable(head(nom_data), 'html')
-
-nom_data = translate_properties(nom_data)
-kable(head(nom_data), 'html')
+Then load `orphatools` package to use it in your R code:
+```{r load_library}
+library(orphatools)
 ```
 
-# Find corresponding disorder / lowest groups of disorders
-```{r rolling_up}
-subtype_to_disorder(subtypeCode = '158676') # 158676 is a subtype of disorder
-subtype_to_disorder(subtypeCode = '303') # 303 is a group of disorder
-get_lowest_groups(orphaCode = '158676')
-```
-It is not recommended to use `subtype_to_disorder` on multiple ORPHAcodes because of efficiency issues.
-For a general "rolling up" operation, you will probably need to :
 
-1. convert your data frame to an orpha_df object. The usage of _force_nodes_ argument allows you to make appear any OPRHA code you need (like disorder codes), even if they are not present in data (but the subtypes are).
+### Check options
+As Orphanet publishes its data on a regular basis and in various language versions, you should first check if options are corrrectly set: 
+```{r options, eval=F}
+orphatools_options()
+```
+
+In order to update Orphanet data in `orphatools`, you will need to add it via `add_nomenclature_pack` and `add_associated_genes`.
+
+### Load data
+You can start handling Orphanet data by using available loading functions:
+```{r load}
+# Data from the nomenclature pack
+df_nomenclature = load_raw_nomenclature()
+classif_data = load_classifications()
+df_synonyms = load_synonyms()
+df_redirections = load_raw_redirections()
+
+# Accessibility: Translate Orphanet concepts using internal dictionary
+df_nomenclature = load_nomenclature()
+df_redirections = load_redirections()
+
+# Data from the associated genes file
+df_associated_genes = load_associated_genes()
+df_genes_synonyms = load_genes_synonyms()
+```
+
+Alternatively, you can easily access ORPHAcode properties through the following functions:
+```{r code_props, results='hold'}
+orpha_code = 303
+get_label(orpha_code)
+get_classification_level(orpha_code)
+get_status(orpha_code)
+get_type(orpha_code)
+```
+
+## Operations on classification
+### Analyze genealogy
+`orphatools` and `igraph` provide usefool functions to analyze the Orphanet classification system.
+
+#### Ancestors, descendants, siblings
+```{r gen-basics}
+orpha_code = 303
+get_parents(orpha_code)
+get_children(orpha_code)
+get_ancestors(orpha_code)
+get_descendants(orpha_code)
+get_siblings(orpha_code)
+```
+For all of these functions, it is sometimes more useful to get directly an edgelist or an equivalent graph, 
+using the `output` argument:
+```{r}
+df_parents = get_parents(orpha_code, output='edgelist')
+graph_descendants = get_descendants(orpha_code, output='graph')
+```
+
+#### Analyze relationships on multiple codes
+When several ORPHAcodes are submitted, you can either analyze what they have in common or 
+merge branches from their own tree to get an extended classification.
+
+The Lowest Common Ancestor (LCA) is the closest ancestor that the given ORPHAcodes have in common.
+It is possible to have several LCAs, when they belong to independent branches.
+```{r lca}
+orpha_codes = c('303', '305', '595356')
+get_LCAs(orpha_codes)
+get_LCAs(orpha_codes, df_classif=classif_data[['ORPHAclassification_187_rare_skin_diseases_fr_2023']])
+```
+
+If you analyze a set of ORPHAcodes, you may want to quickly build a graph to be able to visualize
+relationships between them, or check that your list is complete. `merge_branches` and `complete_family` 
+were implemented in this perspective. 
+
+`merge_branches` just finds ancestors and/or descendants from all given ORPHAcodes and connects the whole list.
+```{r merge_branches, results='hold'}
+orpha_codes = c('303', '305', '595356')
+graph_family = merge_branches(orpha_codes, output = 'graph') # both
+graph_family = merge_branches(orpha_codes, output = 'graph', direction = c('up', 'down')) # both
+graph_family = merge_branches(orpha_codes, output = 'graph', direction = 'both') # both
+plot(graph_family, layout=layout_tree)
+
+graph_family = merge_branches(orpha_codes, output = 'graph', direction='up')
+plot(graph_family, layout=layout_tree)
+
+graph_family = merge_branches(orpha_codes, output = 'graph', direction='down')
+plot(graph_family, layout=layout_tree)
+```
+
+Instead `complete_family` first needs to know which level to reach (`max_depth` argument)
+before finding all descendants of the found root ancestors.
+```{r complete_family, results='hold'}
+orpha_codes = c('79400', '79401', '79410')
+graph_family = complete_family(orpha_codes, output = 'graph', max_depth=0)
+graph_family = complete_family(orpha_codes, output = 'graph', max_depth=1)
+```
+`complete_family` with `max_depth=0` is equivalent to `merge_branches` with `direction='down'`.
+
+See the [Visualization] section to plot and color your graph.
+
+### Find upper classification levels
+```{r rolling_up, results='hold'}
+subtype_to_disorder(orpha_code = '158676') # 158676 is a subtype of disorder
+subtype_to_disorder(orpha_code = '303') # 303 is a group of disorder
+get_lowest_groups(orpha_code = '158676')
+```
+
+It is not recommended to use `subtype_to_disorder` if `orpha_code` is a large vector because of efficiency issues.
+
+If you need to apply the function on a wide set of ORPHAcodes, you will probably need to :
+
+1. convert your data frame to an orpha_df object. The usage of _force_nodes_ argument allows you to make appear any ORPHAcode you need (like disorder codes), even if they are not present in data (but the subtypes are).
 
 2. `group_by` and `summarize`/`mutate`.
 
 3. Filter disorder codes.
 
-See section below about "Counting code" for more details.
-
-# Ancestors
-## Find ancestors codes
-```{r ancestors1}
-code = '303'
-ancestors_codes = get_ancestors(code, codes_only=TRUE)
-print(ancestors_codes)
-```
-
-## Build edgelist
-```{r ancestors2}
-df_ancestors = get_ancestors(code)
-kable(df_ancestors, 'html')
-```
+See the [Aggregation] section for more details.
 
 ### Specify classification
-**Classifications list :**
+
+For all the functions described above, it is possible to analyze a specific classification only through the `df_classif` argument.
+You might want to be restricted to an edgelist from one of the functions above, or directly take one of the 34 Orphanet classifications,
+which are stored in the list returned by `load_classifications`.
+
+Find the corresponding classification through the following:
 ```{r class}
-all_class = load_classifications()
-print(names(all_class))
+all_classif = load_classifications()
+cat(sprintf('%s\n', names(all_classif)))
+```
+
+Here are some examples:
+```{r use_spec_class, eval=FALSE}
+orpha_code = 303
+orpha_codes = c('79400', '79401', '79410')
+get_ancestors(orpha_code, df_classif=classif_data[['ORPHAclassification_156_rare_genetic_diseases_fr_2023']])
+get_ancestors(orpha_code, df_classif=classif_data[['ORPHAclassification_146_rare_cardiac_diseases_fr_2023']])
+get_siblings(orpha_code, df_classif=classif_data[['ORPHAclassification_156_rare_genetic_diseases_fr_2023']])
+get_siblings(orpha_code, df_classif=classif_data[['ORPHAclassification_187_rare_skin_diseases_fr_2023']])
+complete_family(orpha_codes, df_classif=classif_data[['ORPHAclassification_187_rare_skin_diseases_fr_2023']])
 ```
 
 
-```{r ancestors3}
-df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
-kable(df_ancestors, 'html')
-df_ancestors = get_ancestors(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
-kable(df_ancestors, 'html')
-```
+## Visualization
+Orphanet built a large classification system that sometimes needs a specific display to better understand
+how ORPHAcodes are related to each other. 
 
+### Plot
+The most straightforward way to visualize it is to plot the graph. 
+Use the `layout` argument to sort ORPHAcodes from top to bottom.
+```{r basic_plot, results='hold'}
+orpha_code = 303
+graph = get_ancestors(orpha_code, output='graph')
 
-# Descendants
-## Find descendants codes
-```{r descendants1}
-descendants_codes = get_descendants(code, codes_only=TRUE)
-print(descendants_codes)
-```
-
-## Build edgelist
-```{r descendants2}
-df_descendants = get_descendants(code)
-kable(df_descendants, 'html')
-```
-
-### Specify classification
-Specifying classification won't change the output but will just save a small amount of time.
-```{r descendants3}
-df_descendants = get_descendants(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
-kable(df_descendants, 'html')
-df_descendants = get_descendants(code, class_data = all_class[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
-kable(df_descendants, 'html')
-```
-
-# Siblings
-## Find siblings codes
-```{r siblings1}
-code = '79361'
-siblings_codes = get_siblings(code)
-print(siblings_codes)
-```
-
-## Build edgelist
-```{r siblings2}
-df_siblings = get_siblings(code)
-kable(df_siblings, 'html')
-```
-
-## Specify classification
-```{r}
-df_siblings = get_siblings(code, class_data = all_class[['ORPHAclassification_156_rare_genetic_diseases_fr']])
-kable(df_siblings, 'html')
-df_siblings = get_siblings(code, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
-kable(df_siblings, 'html')
-```
-
-# Visualization
-## Plots
-```{r visu1}
-df_ancestors = get_ancestors(code)
-graph_ancestors = igraph::graph_from_data_frame(df_ancestors)
-
-plot(graph_ancestors)
-plot(graph_ancestors, layout=igraph::layout_as_tree)
-plot(graph_ancestors, layout=layout_tree)
-```
-Try `interactive_plot` function for a dynamic plot.
-
-## Hierarchical structures
-```{r visu2}
-df = get_descendants('307711')
-graph = igraph::graph_from_data_frame(df)
 plot(graph)
+plot(graph, layout=igraph::layout_as_tree)
+plot(graph, layout=orphatools::layout_tree)
+```
 
-df_index = assign_indent_index(df)
-df_test = df_index %>% mutate(N = 1:nrow(df_index))
-M_shifted = apply_indent(df_test, cols_to_display = c('code', 'N'))
-kable(M_shifted, 'html')
+For larger graphs, a static plot won't be enough to see the graph details.
+Try `interactive_plot` function for a dynamic plot, which allows you to move/zoom and to change nodes position.
+```{r interactive_plot, eval=F}
+interactive_plot(graph_ancestors)
+```
+
+You can emphasize codes on the plotted graph to locate where are some specific ORPHAcodes
+with `color_codes`, while `color_classification_level` .
+
+```{r color_plot}
+init_codes = c(303, 305)
+graph = merge_branches(init_codes, direction='down', output='graph') %>%
+  color_codes(init_codes) %>%
+  color_class_levels()
+plot(graph)
+```
+
+### Hierarchical structures
+```{r indent}
+orpha_codes = c(303, get_descendants('303'))
+
+df = data.frame(orpha_code=orpha_codes) %>%
+  orpha_df(orpha_code_col='orpha_code') %>%
+  left_join(load_nomenclature(), by='orpha_code')
+
+df_indent = apply_orpha_indent(df, indented_cols='label', prefix='Label_')
+kable(df_indent, 'html')
 ```
 
 
-# Operations on multiple codes
-## Common graph
-The "common graph" merges the ancestors and/or descendants of each code in the list.
-```{r common_graph}
-codes_list = c('303', '305', '595356')
-common_graph = get_common_graph(codes_list) # both
-plot(common_graph, layout=layout_tree)
-common_graph = get_common_graph(codes_list, what = 'ancestors')
-plot(common_graph, layout=layout_tree)
-common_graph = get_common_graph(codes_list, what = 'descendants')
-plot(common_graph, layout=layout_tree)
-```
-
-## Color graphs
-You can emphasize codes on the plotted graph to locate where are the original codes
-with `color_graph` function.
-`color_graph` enables also the visualization of the classification 
-level (Group of disorders, Disorder, Subtype of disorder) on the plotted graph.
-
-```{r}
-colored_graph = color_graph(common_graph, 
-                            emphasize_nodes = codes_list,
-                            display_class_levels = FALSE)
-plot(colored_graph, layout=layout_tree)
-
-colored_graph = color_graph(common_graph, 
-                            emphasize_nodes = codes_list)
-plot(colored_graph, layout=layout_tree)
-```
-
-
-## Lowest Common Ancestors (LCAs)
-```{r lcas}
-get_LCAs(codes_list)
-get_LCAs(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']])
-```
-
-## Complete families
-This function is useful to find codes that might have been forgotten.
-
-```{r relatives}
-new_graph = complete_family(codes_list) %>% 
-  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
-plot(new_graph, layout=layout_tree)
-
-# Restriction to a specific classification
-new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']]) %>% 
-  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
-plot(new_graph, layout=layout_tree)
-
-# Include parents only
-new_graph = complete_family(codes_list, class_data = all_class[['ORPHAclassification_187_rare_skin_diseases_fr']], include_ancestors = FALSE) %>% 
-  color_graph(emphasize_nodes = codes_list, display_class_levels = FALSE)
-plot(new_graph, layout=layout_tree)
-```
-
-# Aggregation operations
-
+## Aggregation operations
 For a hierarchical structure like the ORPHA trees, you will probably need to take codes dependencies into account.
 Let's consider the simplified structure as the following :
 
@@ -226,7 +242,7 @@ kable(df_patients, 'html')
 ```
 How many patients can be gathered for each ORPHAcode ?
 
-## Naive aggregation
+### Naive grouping method
 The basic grouping operation will consider each ORPHAcode as independent.
 
 ![](naive_grouping.png)
@@ -238,7 +254,7 @@ kable(df_counts, 'html')
 ```
 
 
-## New aggregation
+### Customized grouping method
 Converting your data frame to an `orpha_df` object will change the _group_by_ behavior on data :
 
 ![](orpha_df_grouping.png)
@@ -246,23 +262,27 @@ Converting your data frame to an `orpha_df` object will change the _group_by_ be
 You can observe the direct effect on results of such a method :
 
 ```{r counting2}
-df_counts = df_patients %>% group_by_code() %>% count() %>% as.data.frame() # Deprecated
-df_counts = df_patients %>% orpha_df(orphaCode_col = 'code') %>% group_by(code) %>% count() %>% as.data.frame()
+df_counts = df_patients %>% orpha_df(orpha_code_col = 'code') %>% group_by(code) %>% count() %>% as.data.frame()
 kable(df_counts, 'html')
 ```
 You might also want to count distinct patients instead of all rows present in data :
 
 ```{r counting3}
-df_counts = df_patients %>% group_by_code() %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame() # Deprecated
-df_counts = df_patients %>% orpha_df(orphaCode_col = 'code') %>% group_by(code) %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
+df_counts = df_patients %>% orpha_df(orpha_code_col = 'code') %>% group_by(code) %>% summarize(n = n_distinct(patient_id)) %>% as.data.frame()
 kable(df_counts, 'html')
 ```
 
 This also works with `mutate`:
+```{r counting-mutate1}
+# Naive
+df_patients_extended = df_patients %>% group_by(code) %>% mutate(n_included = n_distinct(patient_id)) %>% as.data.frame()
+kable(df_patients_extended, 'html')
+```
 
-```{r counting-mutate}
-df_ext = df_patients %>% orpha_df(orphaCode_col = 'code') %>% group_by(code) %>% mutate.grouped_orpha_df(n_included = n_distinct(patient_id)) %>% as.data.frame()
-kable(df_ext, 'html')
+```{r counting-mutate2}
+# Turn on Orphanet mode
+df_patients_extended_orpha = df_patients %>% orpha_df(orpha_code_col = 'code') %>% group_by(code) %>% mutate(n_included = n_distinct(patient_id)) %>% as.data.frame()
+kable(df_patients_extended_orpha, 'html')
 ```
 
 If your interest is focused on disorders only, keep in mind that `subtype_to_disorder` is unadvised, for computing reasons.
@@ -270,32 +290,61 @@ The method presented in this section is considerably more efficient when the sam
 Then you simply can filter disorder codes to get the desired result.
 
 ```{r rolling_up_codes}
-nom_data = load_nomenclature() %>% translate_properties() %>% select(orphaCode, classLevel)
-df_counts = df_patients %>% 
-  orpha_df(orphaCode_col = 'code') %>%
+df_nomenclature = load_nomenclature() %>% select(orpha_code, level)
+df_counts = df_patients %>%
+  orpha_df(orpha_code_col = 'code') %>%
   group_by(code) %>%
-  summarize(n = n_distinct(patient_id)) %>% 
-  left_join(nom_data, by=c('code'='orphaCode')) %>%
-  filter(classLevel == 'Disorder') %>%
+  summarize(n = n_distinct(patient_id)) %>%
+  left_join(df_nomenclature, by=c('code'='orpha_code')) %>%
+  filter(level == 'Disorder') %>%
   as.data.frame()
 kable(df_counts, 'html')
 ```
 
-Finally some desired ORPHAcode might still be missing in the results. 
-The main reason is the absence of any of this code in data, even if their subtypes are mentioned.
+Finally some desired ORPHAcode might still be missing in the results.
+The main reason is the absence of any of this ORPHAcode in data, even if their subtypes are mentioned.
 In these cases, the _force_nodes_ argument is what you want :
 
 ```{r}
-nom_data = load_nomenclature() %>% translate_properties() %>% select(orphaCode, classLevel)
-df_counts = df_patients %>% 
-  orpha_df(orphaCode_col = 'code', force_nodes = 231568) %>%
+df_nomenclature = load_nomenclature() %>% select(orpha_code, level)
+df_counts = df_patients %>%
+  orpha_df(orpha_code_col = 'code', force_codes = 231568) %>%
   group_by(code) %>%
-  summarize(n = n_distinct(patient_id)) %>% 
-  left_join(nom_data, by=c('code'='orphaCode')) %>%
-  filter(classLevel == 'Disorder') %>%
+  summarize(n = n_distinct(patient_id)) %>%
+  left_join(df_nomenclature, by=c('code'='orpha_code')) %>%
+  filter(level == 'Disorder') %>%
   as.data.frame()
 kable(df_counts, 'html')
 ```
 
 
+## Update codes
+
+As the Orphanet classification constantly evolves, you may need to retrospectively update
+the ORPHAcodes registered in your database. This package proposes a solution for two possible issues:
+
+- The ORPHAcodes that need to be redirected (deprecated or obsoletes).
+- The ORPHAcodes that could have been more specific (using mutated genes information).
+
+### Redirections
+```{r code_redirection}
+orpha_codes = c(304, 166068, 166457)
+redirect_code(orpha_codes)
+redirect_code(orpha_codes, deprecated_only = TRUE)
+```
+
+### Specifications
+```{r code_specification}
+orpha_code_cmt1 = 65753
+orpha_code_cmtX = 64747
+
+# Specification possible
+specify_code(orpha_code_cmt1, 'MPZ', mode='symbol') # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
+specify_code(orpha_code_cmt1, c('MPZ', 'POMT1'), mode='symbol') # POMT1 doesn't bring ambiguity
+
+# Specification impossible
+specify_code(orpha_code_cmtX, 'MPZ', mode='symbol') # No ORPHAcode is associated both to CMTX and MPZ
+specify_code(orpha_code_cmt1, 'PMP22', mode='symbol') # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+specify_code(orpha_code_cmt1, c('MPZ', 'PMP22'), mode='symbol') # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+```
 

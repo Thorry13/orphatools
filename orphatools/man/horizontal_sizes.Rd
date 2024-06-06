@@ -7,16 +7,13 @@
 horizontal_sizes(graph, df_y, root_node = NULL)
 }
 \arguments{
-\item{graph}{The graph from which nodes positions (x axis) will be calculated}
+\item{graph}{The graph from which nodes positions (x axis) will be calculated.}
 
-\item{df_y}{Y coordinates which are useful to simplify the graph}
+\item{df_y}{Y coordinates which are useful to simplify the graph.}
 
 \item{root_node}{\code{root_node} is the reference to calculate the X coordinates of
 its children. It is a dataframe with a name and a relative_position columns. If NULL,
 it appplies the function recursively on each root of the graph.}
-}
-\value{
-
 }
 \description{
 Compute how large should be the graph at each depth

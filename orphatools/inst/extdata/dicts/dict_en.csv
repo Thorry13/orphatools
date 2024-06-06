@@ -1,0 +1,24 @@
+id;label;id_family
+1;Active;status
+129;Active;status
+513;Active;status
+8449;Inactive: Deprecated;status
+8208;Inactive: Obsolete;status
+9216;Inactive: Obsolete;status
+8225;Inactive: Non rare in Europe;status
+36561;Category;type
+21436;Clinical group;type
+21394;Disease;type
+21422;Clinical syndrome;type
+21401;Malformation syndrome;type
+21408;Biolofical anomaly;type
+21415;Morphological anomaly;type
+21429;Particular clinical situation in a disease or syndrome;type
+21443;Etiological subtype;type
+21450;Clinical subtype;type
+21457;Histopathological subtype;type
+36540;Group;level
+36547;Disorder;level
+36554;Subtype;level
+21471;Moved to;redir_type
+27341;Referred to;redir_type

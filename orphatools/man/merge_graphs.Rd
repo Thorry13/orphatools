@@ -2,26 +2,25 @@
 % Please edit documentation in R/classifications.R
 \name{merge_graphs}
 \alias{merge_graphs}
-\title{Convert a list of graphs into a single merged graph}
+\title{Merge graphs}
 \usage{
 merge_graphs(graphs_list)
 }
 \arguments{
-\item{graphs_list}{The graphs to merge}
+\item{graphs_list}{The graphs to merge.}
 }
 \value{
 The merged graph
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#questioning}{\figure{lifecycle-questioning.svg}{options: alt='[Questioning]'}}}{\strong{[Questioning]}}
+
 Convert a list of graphs into a single merged graph
 }
 \examples{
 code = '303'
-df_descendants = get_descendants(code)
-df_ancestors = get_ancestors(code)
+graph_descendants = get_descendants(code, output='graph')
+graph_ancestors = get_ancestors(code, output='graph')
 
-graph_d = igraph::graph_from_data_frame(df_descendants)
-graph_a = igraph::graph_from_data_frame(df_ancestors)
-
-merged_graph = merge_graphs(list(graph_d, graph_a))
+merged_graph = merge_graphs(list(graph_descendants, graph_ancestors))
 }

@@ -2,27 +2,35 @@
 % Please edit documentation in R/visualization.R
 \name{layout_tree}
 \alias{layout_tree}
-\title{Calculate nodes position for a fancy layout}
+\alias{vertical_positions}
+\title{Plot using a tree-like layout}
 \usage{
-layout_tree(graph, reverse_y = TRUE, factor = 5)
+layout_tree(graph, reverse_y = TRUE)
+
+vertical_positions(graph)
 }
 \arguments{
-\item{graph}{The graph to display}
+\item{graph}{The graph to display.}
 
-\item{reverse_y}{If TRUE, display from top to bottom}
-
-\item{factor}{(default 5) This parameter tells how far the nodes should be from each other}
+\item{reverse_y}{If \code{TRUE}, display from top to bottom.}
 }
 \value{
 An adapted layout to plot nodes from Orpha classifications
 }
 \description{
-Calculate nodes position for a fancy layout
+This layout function was specifically designed to display Orphanet classifications.
+Indeed, it only contains from/to relationships, so the latter must be oriented from top to bottom (or bottom to top if \code{reverse_y} is \code{TRUE}).
+
+The function was designed to be used with \code{\link[=plot.igraph]{plot.igraph()}} (\code{layout} argument).
+
+The associated vertical positions are obtained using \code{vertical_positions}.
 }
 \examples{
-df_ancestors = get_ancestors('303')
-graph = igraph::graph_from_data_frame(df_ancestors)
+graph = get_ancestors('303', output='graph')
+
 plot(graph)
 plot(graph, layout=igraph::layout_as_tree)
 plot(graph, layout=layout_tree)
+
+df_y = vertical_positions(graph)
 }

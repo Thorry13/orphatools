@@ -2,20 +2,21 @@
 % Please edit documentation in R/visualization.R
 \name{interactive_plot}
 \alias{interactive_plot}
-\title{This function was designed for a better visualization of large graphs.}
+\title{Dynamic plot}
 \usage{
 interactive_plot(graph, layout_tree = FALSE)
 }
 \arguments{
-\item{graph}{An igraph object to visualize}
+\item{graph}{The graph to visualize.}
 
-\item{layout_tree}{if TRUE, use the layout function above to set initial nodes position}
+\item{layout_tree}{If \code{TRUE}, use \code{\link[=layout_tree]{layout_tree()}} to set initial nodes position.}
 }
 \description{
-This function was designed for a better visualization of large graphs.
+This function uses \code{visNetwork} library for a better visualization of larger graphs.
 }
 \examples{
-D = get_descendants('68346')
-graph = igraph::graph_from_data_frame(D)
+\dontrun{
+graph = get_descendants('68346', output='graph')
 interactive_plot(graph)
+}
 }

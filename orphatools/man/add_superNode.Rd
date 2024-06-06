@@ -7,7 +7,7 @@
 add_superNode(graph)
 }
 \arguments{
-\item{graph}{The graph to add the extra node to}
+\item{graph}{The graph to which the extra node should be added.}
 }
 \value{
 The new graph with the added node
