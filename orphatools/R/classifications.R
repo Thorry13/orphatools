@@ -238,6 +238,9 @@ get_children = function(orpha_code, output='codes_only', df_classif=NULL){
 #' @export
 get_ancestors = function(orpha_code, output='codes_only', max_depth=NULL, df_classif=NULL)
 {
+  if(is.null(max_depth))
+    max_depth=-1
+
   orpha_code = as.character(orpha_code)
   # Use specified classification or all of them if NULL was given
   if(is.null(df_classif))
@@ -277,6 +280,9 @@ get_ancestors = function(orpha_code, output='codes_only', max_depth=NULL, df_cla
 #' @export
 get_descendants = function(orpha_code, output='codes_only', max_depth=NULL, df_classif=NULL){
   orpha_code = as.character(orpha_code)
+
+  if(is.null(max_depth))
+    max_depth=-1
 
   # Use specified classification or all of them if NULL was given
   if(is.null(df_classif))
