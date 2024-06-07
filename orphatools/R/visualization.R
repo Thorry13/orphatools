@@ -386,7 +386,7 @@ apply_orpha_indent = function(df, df_classif=NULL, indented_cols=NULL, prefix='i
 
   # Prune classification
   code_col = attr(df, 'orpha_code_col')
-  df_classif = df_classif %>% filter(from %in% df[[code_col]] | to %in% df[[code_col]])
+  df_classif = df_classif %>% filter(from %in% df[[code_col]])
 
   # Calculate index for each ORPHAcode
   df_index = df_classif %>% assign_indent_index()
