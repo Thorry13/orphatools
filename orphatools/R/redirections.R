@@ -24,18 +24,18 @@ load_redirections = function(){
 #' @rdname load_redirections
 #' @export
 load_raw_redirections = function(){
-  version = getOption('nomenclature_version', default_nom_version())
-  extdata_path = system.file('extdata', package='orphatools')
-  redirections_path = file.path(extdata_path, 'nom_data', version, 'redirections.RDS')
+  v = getOption('orphatools_nomenclature', default_pack_version())
+  nomenclature_path = get_pack_versions() %>% filter(version==v) %>% pull(location)
 
-  if(file.exists(redirections_path))
-    df_redirections = readRDS(redirections_path)
-  else
+  #internal pack_data is silently loaded
+  if(file.exists(nomenclature_path))
+    load(nomenclature_path) # Load other pack_data
+  else if(nomenclature_path != 'internal')
     stop(simpleError(
-'Loading of associations failed. Internal files might be broken.
-See `orphatools_options` or consider reisntalling orphatools package.'))
+    'Loading of redirections failed. Internal files might be broken.
+    See `orphatools_options`, `add_nomenclature_pack` or consider reisntalling orphatools package.'))
 
-  return(df_redirections)
+  return(pack_data$redirections)
 }
 
 
@@ -61,6 +61,8 @@ See `orphatools_options` or consider reisntalling orphatools package.'))
 #' redirect_code(orpha_codes)
 #' redirect_code(orpha_codes, deprecated_only=FALSE)
 redirect_code = function(orpha_codes, deprecated_only=TRUE){
+  orpha_codes = as.character(orpha_codes)
+
   # Load known redirections
   df_redirections = load_raw_redirections()
   if(deprecated_only)
@@ -68,11 +70,11 @@ redirect_code = function(orpha_codes, deprecated_only=TRUE){
       filter(redir_type == 21471) # 21471 is the id for "moved to"
 
   # Redirect
-  redirected_codes = data.frame(from=as.character(orpha_codes)) %>%
+  redirected_codes = data.frame(from=orpha_codes) %>%
     left_join(df_redirections, by='from') %>%
     pull(to)
 
-  return(redirected_codes)
+  return(coalesce(redirected_codes, orpha_codes))
 }
 
 

@@ -12,18 +12,18 @@
 #' @seealso [get_all_labels()] to directly extract all the names associated to the given ORPHAcode.
 load_synonyms = function(){
   # Get nomenclature version
-  version = getOption('nomenclature_version', default_nom_version())
-  extdata_path = system.file('extdata', package='orphatools')
-  synonyms_path = file.path(extdata_path, 'nom_data', version, 'synonyms.RDS')
+  v = getOption('orphatools_nomenclature', default_pack_version())
+  nomenclature_path = get_pack_versions() %>% filter(version==v) %>% pull(location)
 
-  if(file.exists(synonyms_path))
-    df_synonyms = readRDS(synonyms_path)
-  else
+  #internal pack_data is silently loaded
+  if(file.exists(nomenclature_path))
+    load(nomenclature_path) # Load other pack_data
+  else if(nomenclature_path != 'internal')
     stop(simpleError(
-'Loading of synonyms failed. Internal files might be broken.
-See `orphatools_options` or consider reisntalling orphatools package.'))
+    'Loading of synonyms failed. Internal files might be broken.
+    See `orphatools_options`, `add_nomenclature_pack` or consider reisntalling orphatools package.'))
 
-  return(df_synonyms)
+  return(pack_data$synonyms)
 }
 
 
@@ -32,11 +32,15 @@ See `orphatools_options` or consider reisntalling orphatools package.'))
 #' @description
 #' Extract the synonyms of the given ORPHAcode as well as its preferential label, given in first position.
 #'
+#' @importFrom stats setNames
 #' @param orpha_code An ORPHAcode.
 #'
 #' @return A character vector containing all labels associated to the given ORPHAcode.
 #'
 #' @export
+#' @examples
+#'
+#'
 #' @seealso [load_synonyms()] to load the synonyms table.
 get_all_labels = function(orpha_code){
   if(length(orpha_code) > 1)

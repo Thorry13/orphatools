@@ -36,18 +36,18 @@ NULL
 #' @export
 load_classifications = function()
 {
-  version = getOption('nomenclature_version', default_nom_version())
-  extdata_path = system.file('extdata', package='orphatools')
-  all_class_path = file.path(extdata_path, 'nom_data', version, 'classifications.RDS')
+    v = getOption('orphatools_nomenclature', default_pack_version())
+  nomenclature_path = get_pack_versions() %>% filter(version==v) %>% pull(location)
 
-  if(file.exists(all_class_path))
-    all_class = readRDS(all_class_path)
-  else
+  #internal pack_data is silently loaded
+  if(file.exists(nomenclature_path))
+    load(nomenclature_path) # Load other pack_data
+  else if(nomenclature_path != 'internal')
     stop(simpleError(
-  'Loading of classifications failed. Internal files might be broken.
-  See `orphatools_options`, `add_nomenclature_pack` or consider reisntalling orphatools package.'))
+    'Loading of classifications failed. Internal files might be broken.
+    See `orphatools_options`, `add_nomenclature_pack` or consider reisntalling orphatools package.'))
 
-  return(all_class)
+  return(pack_data$classifications)
 }
 
 
@@ -129,8 +129,11 @@ is_in_classif = function(orpha_code, df_classif)
 #' parents = get_parents(orpha_code)
 #'
 #' # Select a specific classification tree
-#' ancestors = get_ancestors(orpha_code, df_classif=all_classif[['ORPHAclassification_156_rare_genetic_diseases_fr']])
-#' ancestors = get_ancestors(orpha_code, df_classif=all_classif[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
+#' classif1 = all_classif[['ORPHAclassification_156_rare_genetic_diseases_fr']]
+#' ancestors = get_ancestors(orpha_code, df_classif=classif1)
+#'
+#' classif2 = all_classif[['ORPHAclassification_146_rare_cardiac_diseases_fr']]
+#' ancestors = get_ancestors(orpha_code, df_classif=classif2)
 #'
 #' # ---
 #' # Descendants
@@ -157,7 +160,9 @@ is_in_classif = function(orpha_code, df_classif)
 #' # Lowest common ancestors
 #'
 #' lcas = get_LCAs(orpha_codes)
-#' lcas = get_LCAs(orpha_codes, df_classif = all_classif[['ORPHAclassification_187_rare_skin_diseases_fr']])
+#'
+#' classif = all_classif[['ORPHAclassification_187_rare_skin_diseases_fr']]
+#' lcas = get_LCAs(orpha_codes, df_classif = classif)
 #'
 #' # ---
 #' # Merge branches
