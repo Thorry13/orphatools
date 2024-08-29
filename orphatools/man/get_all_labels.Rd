@@ -15,6 +15,10 @@ A character vector containing all labels associated to the given ORPHAcode.
 \description{
 Extract the synonyms of the given ORPHAcode as well as its preferential label, given in first position.
 }
+\examples{
+
+
+}
 \seealso{
 \code{\link[=load_synonyms]{load_synonyms()}} to load the synonyms table.
 }

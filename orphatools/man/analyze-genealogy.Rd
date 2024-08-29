@@ -114,8 +114,11 @@ parents = get_ancestors(orpha_code, max_depth=1)
 parents = get_parents(orpha_code)
 
 # Select a specific classification tree
-ancestors = get_ancestors(orpha_code, df_classif=all_classif[['ORPHAclassification_156_rare_genetic_diseases_fr']])
-ancestors = get_ancestors(orpha_code, df_classif=all_classif[['ORPHAclassification_146_rare_cardiac_diseases_fr']])
+classif1 = all_classif[['ORPHAclassification_156_rare_genetic_diseases_fr']]
+ancestors = get_ancestors(orpha_code, df_classif=classif1)
+
+classif2 = all_classif[['ORPHAclassification_146_rare_cardiac_diseases_fr']]
+ancestors = get_ancestors(orpha_code, df_classif=classif2)
 
 # ---
 # Descendants
@@ -142,7 +145,9 @@ graph_siblings = get_siblings(orpha_code, output='graph')
 # Lowest common ancestors
 
 lcas = get_LCAs(orpha_codes)
-lcas = get_LCAs(orpha_codes, df_classif = all_classif[['ORPHAclassification_187_rare_skin_diseases_fr']])
+
+classif = all_classif[['ORPHAclassification_187_rare_skin_diseases_fr']]
+lcas = get_LCAs(orpha_codes, df_classif = classif)
 
 # ---
 # Merge branches

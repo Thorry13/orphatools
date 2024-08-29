@@ -8,7 +8,8 @@ orpha_df(
   x,
   orpha_code_col = "orpha_code",
   df_classif = NULL,
-  force_codes = NULL
+  force_codes = NULL,
+  mode = "on"
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ orpha_df(
 \item{df_classif}{The classification to consider, in a from/to format.}
 
 \item{force_codes}{ORPHAcodes to be forced to appear in \code{groups} attribute after a \code{\link[=group_by]{group_by()}} operation.}
+
+\item{mode}{Should either be \code{"on"} (the default) to convert data.frame into \code{orpha_df} object or
+\code{"off"} to roll back to previous class and remove relevant attributes.}
 }
 \value{
 An \code{orpha_df} instantiation. Any data.frame extension will be kept.
