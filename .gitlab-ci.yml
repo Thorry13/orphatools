@@ -29,7 +29,7 @@ testing:
     artifacts:
         paths:
             - public
-    coverage: '\d+\.\d+'
+    coverage: '/\d+\.\d+/'
         
 
 # To produce a code coverage report as a GitLab page see
