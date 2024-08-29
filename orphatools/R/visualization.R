@@ -35,7 +35,10 @@
 color_codes = function(graph, orpha_codes){
     nodes = V(graph) %>% names
     graph = set_vertex_attr(graph, 'label.color', index=nodes %in% orpha_codes, '#CD0000') # red3
+    graph = set_vertex_attr(graph, 'label.color', index=!nodes %in% orpha_codes, 'black')
     graph = set_vertex_attr(graph, 'frame.color', index=nodes %in% orpha_codes, '#FF0000') # red
+    graph = set_vertex_attr(graph, 'frame.color', index=!nodes %in% orpha_codes, 'black')
+    return(graph)
 }
 
 
@@ -43,15 +46,19 @@ color_codes = function(graph, orpha_codes){
 #' @export
 color_class_levels = function(graph){
   # Determine classification levels for each ORPHAcodes
-  class_levels = get_classification_level(V(graph) %>% names())
+  class_levels = data.frame(orpha_code = names(V(graph))) %>%
+    left_join(load_raw_nomenclature(), by='orpha_code') %>%
+    pull(level)
 
   # Color nodes
-  graph = set_vertex_attr(graph, 'classLevel', index=class_levels == 'Group', 'Group')
-  graph = set_vertex_attr(graph, 'color', index=class_levels == 'Group', '#4169E1') # royalblue1
-  graph = set_vertex_attr(graph, 'classLevel', index=class_levels == 'Disorder', 'Disorder')
-  graph = set_vertex_attr(graph, 'color', index=class_levels == 'Disorder', '#7CCD7C') # palegreen3
-  graph = set_vertex_attr(graph, 'classLevel', index=class_levels == 'Subtype', 'Subtype')
-  graph = set_vertex_attr(graph, 'color', index=class_levels == 'Subtype', '#CD96CD') # plum3
+  graph = set_vertex_attr(graph, 'classLevel', index=class_levels == '36540', 'Group')
+  graph = set_vertex_attr(graph, 'color', index=class_levels == '36540', '#4169E1') # royalblue1
+  graph = set_vertex_attr(graph, 'classLevel', index=class_levels == '36547', 'Disorder')
+  graph = set_vertex_attr(graph, 'color', index=class_levels == '36547', '#7CCD7C') # palegreen3
+  graph = set_vertex_attr(graph, 'classLevel', index=class_levels == '36554', 'Subtype')
+  graph = set_vertex_attr(graph, 'color', index=class_levels == '36554', '#CD96CD') # plum3
+
+  return(graph)
 }
 
 
@@ -316,18 +323,17 @@ interactive_plot = function(graph, layout_tree = FALSE)
 
 
   # Rename color parameters if they are provided
-  if(all(c('color', 'frame.color', 'label.color') %in%
-                names(df_nodes))){
-  df_nodes = df_nodes %>%
-    mutate(color.background = color,
-           color.highlight = color,
-           color.border = ifelse(
-             is.na(frame.color),
-             color,
-             frame.color
-             ),
-           font.color = label.color) %>%
+  if('color' %in% names(df_nodes))
+    df_nodes = df_nodes %>%
+    mutate(
+      color.background = color,
+      color.highlight = color) %>%
     select(-color)
+  if(all(c('frame.color', 'label.color') %in% names(df_nodes))){
+    df_nodes = df_nodes %>%
+      mutate(
+        color.border = coalesce(frame.color, '#2B7CE9'),
+        font.color = label.color)
   }
 
   df_edges = graph %>% as_data_frame(what='edges')
@@ -362,6 +368,7 @@ interactive_plot = function(graph, layout_tree = FALSE)
 #' @importFrom dplyr mutate
 #' @importFrom tidyr replace_na
 #' @importFrom stringr str_count str_replace
+#' @importFrom stats setNames
 #'
 #' @return A matrix with the right indentations applied on the requested columns
 #' @export
@@ -410,7 +417,9 @@ apply_orpha_indent = function(df, df_classif=NULL, indented_cols=NULL, prefix='i
 
   df_final = df %>%
     select(-any_of(indented_cols), -index, -n_indent) %>%
-    bind_cols(df_indent)
+    # bind_cols(df_indent)
+    cbind(df_indent) %>%
+    dplyr_reconstruct(df)
 
   return(df_final)
 }
