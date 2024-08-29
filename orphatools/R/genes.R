@@ -28,66 +28,60 @@
 #' @rdname load-genes
 #' @export
 load_associated_genes = function(){
-  version = getOption('gene_file_version', default_gene_version())
-  extdata_path = system.file('extdata', package='orphatools')
-  orpha_genes_path = file.path(extdata_path, 'gene_data', version, 'associated_genes.RDS')
+  v = getOption('orphatools_gene_file', default_genes_version())
+  gene_file_path = get_genes_versions() %>% filter(version==v) %>% pull(location)
 
-  if(file.exists(orpha_genes_path))
-    df_orpha_genes = readRDS(orpha_genes_path)
-  else
+  #internal genes_data is silently loaded
+  if(file.exists(gene_file_path))
+    load(gene_file_path) # Load other genes_data
+  else if(gene_file_path != 'internal')
     stop(simpleError(
-    'Loading of associations failed. Internal files might be broken.
+    'Loading of genes associations failed. Internal files might be broken.
     See `orphatools_options`, `add_associated_genes` or consider reisntalling orphatools package.'))
 
-  return(df_orpha_genes)
+  return(genes_data$associations)
 }
 
 
 #' @rdname load-genes
 #' @export
 load_genes_synonyms = function(){
-  version = getOption('gene_file_version', default_gene_version())
-  extdata_path = system.file('extdata', package='orphatools')
-  genes_synonyms_path = file.path(extdata_path, 'gene_data', version, 'genes_synonyms.RDS')
+  v = getOption('orphatools_gene_file', default_genes_version())
+  gene_file_path = get_genes_versions() %>% filter(version==v) %>% pull(location)
 
-  if(file.exists(genes_synonyms_path))
-    df_genes_synonyms = readRDS(genes_synonyms_path)
-  else
+  if(file.exists(gene_file_path))
+    load(gene_file_path)
+  else if(gene_file_path != 'internal')
     stop(simpleError(
-    'Loading of associations failed. Internal files might be broken.
-    See `orphatools_options` or consider reisntalling orphatools package.'))
+    'Loading of genes associations failed. Internal files might be broken.
+    See `orphatools_options`, `add_associated_genes` or consider reisntalling orphatools package.'))
 
-  return(df_genes_synonyms)
+  return(genes_data$synonyms)
 }
 
-
-#' Specify ORPHAcode with gene
+#' ORPHAcodes and genes
 #'
 #' @description
-#' Find a more precise ORPHAcode according to the provided mutated genes.
+#' Analyze possible specifications from given ORPHAcode and genes.
 #'
-#' Potential replacement ORPHAcodes will be searched among the descendants of the
-#' given ORPHAcode.They must be associated to one of the mutated genes given in `genes`
-#' argument. This kind of association is necessarily `"Assessed"` and `"Disease-causing"`
-#' according to Orphanet.
+#' If such specifications are found, then the ORPHAcode-genes combinations are
+#' considered as consistent.
 #'
-#' @details
 #' Symbols (see [load_genes_synonyms()] to find them all) and HGNC codes are supported,
 #' let the function know which you chose with the `mode` argument.
 #'
-#' Specification is applied if and only if a unique potential replacement ORPHAcode was found.
-#' The function was first meant to be applied to a single ORPHAcode and a set of mutated genes
-#' found in one individual. However you might want to apply function on data.frame columns
-#' using `tidyverse` functions. This way your single ORPHAcode might be repeated over the full set of
-#' mutated genes. The operation will then be row-wise and the duplicated ORPHAcodes will be considered
-#' independently. Ths behavior makes a call on a `grouped_df` object unadvised.
+#' @details
+#' Potential specifications will be searched among the descendants of the
+#' given ORPHAcode. They must be associated to one of the mutated genes given in the `genes`
+#' argument. This kind of association is necessarily `"Assessed"` and `"Disease-causing"`
+#' according to Orphanet.
 #'
-#' You have a couple of options to deal with it:
+#' In `specify_code`, specification is applied if and only if a unique potential replacement ORPHAcode was found.
 #'
+#' For both functions, each row is considered as independent by default.
+#' You have a couple of options to deal cases where an individual genes are spread over multiple rows :
 #' - Set the `.by` argument instead of `group_by`.
 #' - Use `group_by` to [chop()] mutated genes into a list-column and `ungroup` to make your data row-wise compatible.
-#'
-#'  See examples below.
 #'
 #' @param orpha_codes The ORPHAcodes to update. If length is greater than 1, the full set of genes will be applied to each vector element.
 #' @param genes The mutated genes. If given as a list,
@@ -108,50 +102,102 @@ load_genes_synonyms = function(){
 #' @examples
 #' library(dplyr)
 #'
-#' # Basic usage
+#' #### Basic usage ####
 #' orpha_code_cmt1 = 65753
 #' orpha_code_cmtX = 64747
 #'
 #' ## Specification possible
-#' specify_code(orpha_code_cmt1, 'MPZ', mode='symbol') # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
-#' specify_code(orpha_code_cmt1, c('MPZ', 'POMT1'), mode='symbol') # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
+#' # CMT1B is the only ORPHAcode both associated with CMT1 and MPZ
+#' specify_code(orpha_code_cmt1, 'MPZ', mode='symbol')
+#' check_orpha_gene_consistency(orpha_code_cmt1, 'MPZ', mode='symbol')
+#'
+#' # CMT1B is the only ORPHAcode both associated with CMT1 and MPZ and/or POMT1
+#' specify_code(orpha_code_cmt1, c('MPZ', 'POMT1'), mode='symbol')
+#' check_orpha_gene_consistency(orpha_code_cmt1, c('MPZ', 'POMT1'), mode='symbol')
 #'
 #' ## Specification impossible
-#' specify_code(orpha_code_cmtX, 'MPZ', mode='symbol') # No ORPHAcode is associated both to CMTX and MPZ
-#' specify_code(orpha_code_cmt1, 'PMP22', mode='symbol') # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
-#' specify_code(orpha_code_cmt1, c('MPZ', 'PMP22'), mode='symbol') # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+#' # No ORPHAcode is associated both to CMTX and MPZ
+#' specify_code(orpha_code_cmtX, 'MPZ', mode='symbol')
+#' check_orpha_gene_consistency(orpha_code_cmtX, 'MPZ', mode='symbol')
+#'
+#' # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+#' specify_code(orpha_code_cmt1, 'PMP22', mode='symbol')
+#' check_orpha_gene_consistency(orpha_code_cmt1, 'PMP22', mode='symbol') # TRUE
+#'
+#' # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+#' # or MPZ (CMT1B), but none with both PMP22 and MPZ.
+#' specify_code(orpha_code_cmt1, c('MPZ', 'PMP22'), mode='symbol')
+#' check_orpha_gene_consistency(orpha_code_cmt1, c('MPZ', 'PMP22'), mode='symbol') # Is it consistent ?
 #'
 #' ## Alternatively with HGNC codes (the default mode)
-#' specify_code(orpha_code_cmt1, 7225) # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
-#' specify_code(orpha_code_cmt1, c(7225, 9202)) # CMT1B is the lonely ORPHAcode both associated with CMT1 and MPZ
-#' specify_code(orpha_code_cmtX, 7225) # No ORPHAcode is associated both to CMTX and MPZ
-#' specify_code(orpha_code_cmt1, 9118) # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
-#' specify_code(orpha_code_cmt1, c(7225, 9118)) # Several ORPHAcodes are associated both to CMT1 and PMP22 (CMT1A and CMT1E)
+#' # CMT1B is the only ORPHAcode both associated with CMT1 and MPZ
+#' specify_code(orpha_code_cmt1, 7225)
 #'
-#' # Using dataframes
+#' #### Using dataframes ####
 #' df = tibble(
-#'  patient_id=c('A', 'A', 'B', 'C', 'D', 'D'),
-#'  initial_orpha_code = c("65753", "65753", "903", "65753", "65753", "65753"), # CMT1 and von Willebrand
-#   symbol = c("MPZ", "LITAF", "VWF", "LITAF", "MPZ", "VWF")) # MPZ, VWF and LITAF
+#'   patient_id=c('A', 'A', 'B', 'C', 'D', 'D'),
+#'   symbol = c("MPZ", "LITAF", "VWF", "LITAF", "MPZ", "VWF"),
 #'
-#' ## Basic call
-#' df_spec = df %>% mutate(
-#'   assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol'))
+#'   # CMT1 (ORPHA:65753) and von Willebrand (ORPHA:903)
+#'   initial_orpha_code = c("65753", "65753", "903", "65753", "65753", "65753"))
+#'
+#' ## Basic call : each row is independent
+#' df_spec = df %>% mutate(assigned_orpha_code =
+#'     specify_code(initial_orpha_code, genes=symbol, mode='symbol'))
 #'
 #' ## Grouping may be preferable
-#' df_spec = df %>% mutate(
-#'   assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol', .by=))
+#' df_spec = df %>% mutate(assigned_orpha_code = specify_code(
+#'     initial_orpha_code, genes=symbol, mode='symbol', .by=patient_id))
 #'
 #' ## Equivalent method with genes in a list-column
 #' df = tibble(
-#'  patient_id=c('A', 'B', 'C', 'D'),
-#'  initial_orpha_code = c("65753", "903", "65753", "65753"), # CMT1 and von Willebrand
-#'   symbol = list(c("MPZ", "LITAF"), "VWF", "LITAF", c("MPZ", "VWF"))) # MPZ, VWF and LITAF
+#'   patient_id=c('A', 'B', 'C', 'D'),
+#'   initial_orpha_code = c("65753", "903", "65753", "65753"),
+#'   symbol = list(c("MPZ", "LITAF"), "VWF", "LITAF", c("MPZ", "VWF")))
 #'
-#' df_spec = df %>% group_by(patient_id) %>% mutate(
-#'   assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol'))
+#' df_spec = df %>% mutate(assigned_orpha_code =
+#'   specify_code(initial_orpha_code, genes=symbol, mode='symbol'))
 #'
+#' @name orpha-genes
 specify_code = function(orpha_codes, genes=NULL, mode='HGNC', .by=1:length(orpha_codes)){
+  # Input as a list is equivalent as grouped data
+  if(is.list(genes)){
+    new_codes = tibble(i=1:length(orpha_codes), orpha_code=orpha_codes, genes=genes, .by=.by) %>%
+      unnest(any_of('genes')) %>%
+      mutate(new_code = specify_code(orpha_code, genes, mode=mode, .by=.by)) %>%
+      distinct(i, new_code) %>%
+      pull(new_code)
+    return(new_codes)
+  }
+
+  new_codes = analyze_specifications(orpha_codes, genes, mode, .by) %>%
+    pull(new_code)
+
+  return(new_codes)
+}
+
+
+#' @rdname orpha-genes
+#' @export
+check_orpha_gene_consistency = function(orpha_codes, genes=NULL, mode='HGNC', .by=1:length(orpha_codes)){
+  # Input as a list is equivalent as grouped data
+  if(is.list(genes)){
+    consistencies = tibble(i=1:length(orpha_codes), orpha_code=orpha_codes, genes=genes, .by=.by) %>%
+      unnest(any_of('genes')) %>%
+      mutate(is_consistent = check_orpha_gene_consistency(orpha_code, genes, mode=mode, .by=.by)) %>%
+      distinct(i, is_consistent) %>%
+      pull(is_consistent)
+    return(consistencies)
+  }
+
+  consistencies = analyze_specifications(orpha_codes, genes, mode, .by) %>%
+    pull(is_consistent)
+
+  return(consistencies)
+}
+
+
+analyze_specifications = function(orpha_codes, genes=NULL, mode='HGNC', .by=1:length(orpha_codes)){
   choose_old_or_new = function(orpha_code, potential_codes){
     n_possibilities = n_distinct(potential_codes, na.rm=T)
     if(n_possibilities == 1)
@@ -164,17 +210,7 @@ specify_code = function(orpha_codes, genes=NULL, mode='HGNC', .by=1:length(orpha
   if(length(orpha_codes)==0 || length(genes)==0)
     return(orpha_codes)
 
-  # Input as a list is equivalent as grouped data
-  if(is.list(genes)){
-    new_codes = tibble(i=1:length(orpha_codes), orpha_code=orpha_codes, genes=genes, .by=.by) %>%
-      unnest(any_of('genes')) %>%
-      mutate(new_code = specify_code(orpha_code, genes, mode=mode, .by=.by)) %>%
-      distinct(i, new_code) %>%
-      pull(new_code)
-    return(new_codes)
-  }
-
-  n_genes = tibble(gene=genes, .by=.by) %>% group_by(.by) %>% summarize(n_genes = n_distinct(genes)) %>% pull(n_genes)
+  n_genes = tibble(gene=genes, .by=.by) %>% group_by(across(any_of(.by))) %>% summarize(n_genes = n_distinct(genes)) %>% pull(n_genes)
   if(any(n_genes > 10))
     warning("One of the considerered set of genes is greater than 10.
             Please make sure you set the `.by` argument correctly.")
@@ -218,20 +254,21 @@ specify_code = function(orpha_codes, genes=NULL, mode='HGNC', .by=1:length(orpha
     filter(orpha_code %in% orpha_codes) %>%
     distinct(orpha_code, gene_id, potential_codes)
 
-  # Check if there is a unique potential specification ORPHAcode
-  new_codes = tibble(i=1:length(orpha_codes), orpha_code=orpha_codes, gene_id=gene_ids, .by=.by) %>%
+  # Analyze specifications
+  df_analysis = tibble(i=1:length(orpha_codes), orpha_code=orpha_codes, gene_id=gene_ids, .by=.by) %>%
     group_by(across(any_of('.by'))) %>%
     mutate(gene_id = list(gene_id)) %>%
     ungroup() %>%
     unnest(gene_id) %>%
     left_join(df_prospects, by=c('orpha_code', 'gene_id'), relationship='many-to-many') %>%
     group_by(across(any_of(c('.by', 'orpha_code')))) %>%
-    mutate(new_code = choose_old_or_new(orpha_code, potential_codes)) %>%
+    mutate(
+      new_code = choose_old_or_new(orpha_code, potential_codes),
+      is_consistent = n_distinct(potential_codes, na.rm=T)>0) %>%
     ungroup() %>%
-    distinct(i, new_code) %>%
-    pull(new_code)
+    distinct(i, new_code, is_consistent)
 
-  return(new_codes)
+  return(df_analysis)
 }
 
 
