@@ -3,10 +3,13 @@
 \name{classifications}
 \alias{classifications}
 \alias{load_classifications}
+\alias{load_all_classifications}
 \alias{is_in_classif}
 \title{Orphanet classifications}
 \usage{
 load_classifications()
+
+load_all_classifications()
 
 is_in_classif(orpha_code, df_classif)
 }

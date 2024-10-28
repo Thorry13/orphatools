@@ -50,6 +50,12 @@ load_classifications = function()
   return(pack_data$classifications)
 }
 
+#' @rdname classifications
+#' @export
+load_all_classifications = function(){
+  return(load_classifications() %>% bind_rows() %>% distinct())
+}
+
 
 #' @rdname classifications
 #' @param orpha_code An ORPHAcode.

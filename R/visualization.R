@@ -384,6 +384,7 @@ apply_orpha_indent = function(df, df_classif=NULL, indented_cols=NULL, prefix='i
 {
   if(!'orpha_df' %in% class(df))
     stop(simpleError('`apply_orpha_indent` needs an `orpha_df` instantiation to work.'))
+  code_col = attr(df, 'orpha_code_col')
 
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
@@ -392,8 +393,10 @@ apply_orpha_indent = function(df, df_classif=NULL, indented_cols=NULL, prefix='i
     indented_cols = names(df)
 
   # Prune classification
-  code_col = attr(df, 'orpha_code_col')
-  df_classif = df_classif %>% filter(from %in% df[[code_col]])
+  # df_classif = df_classif %>% filter(from %in% df[[code_col]])
+  df_classif = graph_from_data_frame(df_classif) %>%
+    reduce_graph(unique(df[[code_col]])) %>%
+    as_data_frame()
 
   # Calculate index for each ORPHAcode
   df_index = df_classif %>% assign_indent_index()
@@ -450,4 +453,62 @@ assign_indent_index = function(df, current_code = NULL, current_index = '')
 
   # Return the sorted data.frame
   return(df_index %>% arrange(index))
+}
+
+
+path2edges = function(path){
+  if(length(path)<2)
+    return(NULL)
+  df_edges = data.frame(
+    from = path[1:(length(path)-1)],
+    to = path[2:length(path)])
+  return(df_edges)
+}
+
+
+#' Reduce a graph
+#'
+#' @description
+#' Similar to an induced subgraph, but creates shortcut edges between vertices
+#' that were primarily connected.
+#'
+#' @param graph The graph to reduce
+#' @param vs The vertices to keep
+#'
+#' @return The reduced graph, which is different in general from an induced
+#' subgraph whose all edges must exist in the original graph.
+#'
+#' @import magrittr
+#' @importFrom igraph graph_from_data_frame all_simple_paths
+#' @importFrom dplyr bind_rows distinct
+#'
+#' @export
+#'
+#' @examples
+#' # Define the original graph
+#' df_edges = data.frame(from=c('A', 'A', 'B'), to=c('B', 'D', 'C'))
+#' G = igraph::graph_from_data_frame(df_edges)
+#' plot(G, layout=layout_tree)
+#'
+#' # Keep the specified vertices (Remove vertex 'B')
+#' vs = c('A', 'C', 'D')
+#' G_induced = igraph::induced_subgraph(G, vs)
+#' plot(G_induced, layout=layout_tree)
+#'
+#' G_reduced = reduce_graph(G, vs)
+#' plot(G_reduced, layout=layout_tree)
+#'
+reduce_graph = function(graph, vs){
+  roots = find_roots(graph)
+  leaves = find_leaves(graph)
+  all_paths = lapply(roots, \(root) all_simple_paths(graph, from = root, to=leaves)) %>%
+    unlist(recursive=FALSE) %>%
+    sapply(\(x) names(x)[names(x) %in% vs], simplify=FALSE)
+
+  df_edges = lapply(all_paths, path2edges) %>%
+    bind_rows() %>%
+    distinct()
+
+  new_graph = graph_from_data_frame(df_edges)
+  return(new_graph)
 }

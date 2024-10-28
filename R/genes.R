@@ -225,7 +225,9 @@ analyze_specifications = function(orpha_codes, genes=NULL, mode='HGNC', .by=1:le
     df_add = df_genes_synonyms %>%
       mutate(synonyms = pref_symbol) %>%
       distinct()
-    df_genes_synonyms_ext = bind_rows(df_add, df_genes_synonyms) %>%
+    df_genes_synonyms_ext = df_genes_synonyms %>%
+      filter(!is.na(synonyms)) %>%
+      bind_rows(df_add) %>%
       distinct()
     gene_ids = data.frame(symbols = genes) %>%
       left_join(df_genes_synonyms_ext, by=c('symbols'='synonyms')) %>%
