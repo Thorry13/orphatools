@@ -509,6 +509,14 @@ reduce_graph = function(graph, vs){
     bind_rows() %>%
     distinct()
 
+  # Remove redundant edges
+  tmp_graph = graph_from_data_frame(df_edges)
+  df_edges = df_edges %>%
+    rowwise() %>%
+    mutate(to_rem = length(all_simple_paths(tmp_graph, from, to)) > 1) %>%
+    ungroup() %>%
+    filter(!to_rem)
+
   new_graph = graph_from_data_frame(df_edges)
   return(new_graph)
 }
