@@ -1,2 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+.gitignore
+src_tests
+releases
+to_rem
+jss-articles
+inflate*
+orphatools-vignette.pdf
+
