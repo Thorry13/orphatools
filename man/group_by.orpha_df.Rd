@@ -23,18 +23,3 @@ rows containing descendants ORPHAcodes. This way any row may belong to several g
 The function will force the creation of groups (they may be empty) for any ORPHAcode provided
 in \code{force_codes} argument when \code{\link[=orpha_df]{orpha_df()}} is called.
 }
-\examples{
-library(dplyr)
-
-# Build patients data.frame
-df_patients = data.frame(
-patient_id = c(1,2,3,4,5,6),
-code = c('158673', '595356', '305', '79406', '79406', '595356'))
-
-df_counts = df_patients \%>\% group_by(code)
-attr(df_counts, 'groups')
-
-df_counts = df_patients \%>\% orpha_df(orpha_code_col = 'code') \%>\% group_by(code)
-attr(df_counts, 'groups')
-
-}

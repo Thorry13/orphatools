@@ -131,12 +131,16 @@ dplyr_col_modify.orpha_df = function(data, cols){
 #' # Build patients data.frame
 #' df_patients = data.frame(
 #' patient_id = c(1,2,3,4,5,6),
+#' group = c('A,'A','A','B','B','B')
 #' code = c('158673', '595356', '305', '79406', '79406', '595356'))
 #'
 #' df_counts = df_patients %>% group_by(code)
 #' attr(df_counts, 'groups')
 #'
 #' df_counts = df_patients %>% orpha_df(orpha_code_col = 'code') %>% group_by(code)
+#' attr(df_counts, 'groups')
+#'
+#' df_counts = df_patients %>% orpha_df(orpha_code_col = 'code') %>% group_by(code, group)
 #' attr(df_counts, 'groups')
 #'
 group_by.orpha_df = function(.data, ...){
