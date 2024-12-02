@@ -26,7 +26,7 @@ The colored graph
 \examples{
 # Build graph
 init_codes = c(303, 305)
-graph = merge_branches(init_codes, direction='down', output='graph')
+graph = get_descendants(init_codes, output='graph')
 plot(graph)
 
 # Emphasize some specific ORPHAcodes

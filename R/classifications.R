@@ -87,7 +87,8 @@ is_in_classif = function(orpha_code, df_classif)
 #'   - `get_siblings`
 #'
 #' - Functions applied to a set of ORPHAcodes:
-#'   - `merge_branches`
+#'   - `get_ancestors`
+#'   - `get_descendants`
 #'   - `complete_family`
 #'   - `get_LCAs`
 #'
@@ -102,7 +103,6 @@ is_in_classif = function(orpha_code, df_classif)
 #' @param output A value specifying the output format. Should be in `c("codes_only", "edgelist", "graph")`.
 #' @param max_depth The maximum reached depth starting from the given ORPHAcode.
 #' @param df_classif The classification data to consider. If NULL, load the whole Orphanet classification.
-#' @param direction This gives the ancestors and/or descendants direction to complete the family. Should be in `c("up", "down", "both")`.
 #'
 #' @return
 #' Results are returned in the format specified in `output` argument :
@@ -113,6 +113,7 @@ is_in_classif = function(orpha_code, df_classif)
 #' @importFrom stats na.omit
 #' @importFrom purrr keep is_empty
 #' @importFrom stringr str_equal
+#' @importFrom rlang arg_match
 #'
 #' @examples
 #' library(dplyr)
@@ -122,13 +123,9 @@ is_in_classif = function(orpha_code, df_classif)
 #'
 #' # ---
 #' # Ancestors
-#'
-#' # Get ancestors ORPHAcodes only
-#' ancestors_codes = get_ancestors(orpha_code)
-#'
-#' # Change output format
-#' df_ancestors = get_ancestors(orpha_code, output='edgelist')
-#' graph_ancestors = get_ancestors(orpha_code, output='graph')
+#' ancestors = get_ancestors(orpha_code)
+#' ancestors_edges = get_ancestors(orpha_code, output='edgelist')
+#' ancestors_graph = get_ancestors(orpha_code, output='graph')
 #'
 #' # Get parents only
 #' parents = get_ancestors(orpha_code, max_depth=1)
@@ -143,60 +140,52 @@ is_in_classif = function(orpha_code, df_classif)
 #'
 #' # ---
 #' # Descendants
-#'
-#' # Get desendants ORPHAcodes only
 #' descendants_codes = get_descendants(orpha_code)
-#'
-#' # Change output format
-#' df_descendants = get_descendants(orpha_code, output='edgelist')
-#' graph_descendants = get_descendants(orpha_code, output='graph')
+#' decendants_edges = get_descendants(orpha_code, output='edgelist')
+#' descendants_graph = get_descendants(orpha_code, output='graph')
 #'
 #' # Get children only
-#' df_children = get_descendants(orpha_code, max_depth=1)
-#' df_childen = get_children(orpha_code)
+#' children = get_descendants(orpha_code, max_depth=1)
+#' children = get_children(orpha_code)
 #'
 #' # ---
 #' # Siblings
-#'
 #' siblings = get_siblings(orpha_code)
-#' df_siblings = get_siblings(orpha_code, output='edgelist')
-#' graph_siblings = get_siblings(orpha_code, output='graph')
+#' siblings_edges = get_siblings(orpha_code, output='edgelist')
+#' siblings_graph = get_siblings(orpha_code, output='graph')
 #'
 #' # ---
 #' # Lowest common ancestors
-#'
 #' lcas = get_LCAs(orpha_codes)
 #'
 #' classif = all_classif[['ORPHAclassification_187_rare_skin_diseases_fr']]
 #' lcas = get_LCAs(orpha_codes, df_classif = classif)
 #'
 #' # ---
-#' # Merge branches
-#'
-#' family_codes = merge_branches(orpha_codes)
-#' family_codes = merge_branches(orpha_codes, df_classif = all_classif[[1]])
-#' family_codes = merge_branches(orpha_codes, direction='up')
-#' family_codes = merge_branches(orpha_codes, direction='down')
-#' df_family = merge_branches(orpha_codes, output='edgelist')
-#' graph_family = merge_branches(orpha_codes, output='graph')
-#'
-#' # ---
 #' # Complete family
 #' family_codes = complete_family(orpha_codes)
 #' family_codes = complete_family(orpha_codes, df_classif=all_classif[[1]])
-#' family_codes = complete_family(orpha_codes, max_depth=0)
-#' df_family = complete_family(orpha_codes, output = 'edgelist')
-#' graph_family = complete_family(orpha_codes, output='graph')
+#' family_codes = complete_family(orpha_codes, max_depth=2)
+#' family_edges = complete_family(orpha_codes, output = 'edgelist')
+#' family_graph = complete_family(orpha_codes, output='graph')
 #'
 #' @name analyze-genealogy
 NULL
 
 #' @rdname analyze-genealogy
 #' @export
-get_parents = function(orpha_code, output='codes_only', df_classif=NULL){
+get_parents = function(orpha_code, output=c('codes_only', 'edgelist', 'graph'), df_classif=NULL){
+  output = arg_match(output)
+
   # Use specified classification or all of them if NULL was given
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
+
+  # Check if the code belongs to the given classification
+  if(!is_in_classif(orpha_code, df_classif)){
+    warning('The given ORPHAcode does not belong to the classification.')
+    return(NULL)
+  }
 
   # Search parents
   df_parents = df_classif %>% filter(to == orpha_code)
@@ -220,10 +209,18 @@ get_parents = function(orpha_code, output='codes_only', df_classif=NULL){
 
 #' @rdname analyze-genealogy
 #' @export
-get_children = function(orpha_code, output='codes_only', df_classif=NULL){
+get_children = function(orpha_code, output=c('codes_only', 'edgelist', 'graph'), df_classif=NULL){
+  output = arg_match(output)
+
   # Use specified classification or all of them if NULL was given
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
+
+  # Check if the code belongs to the given classification
+  if(!is_in_classif(orpha_code, df_classif)){
+    warning('The given ORPHAcode does not belong to the classification.')
+    return(NULL)
+  }
 
   # Search children
   df_children = df_classif %>% filter(from == orpha_code)
@@ -247,29 +244,45 @@ get_children = function(orpha_code, output='codes_only', df_classif=NULL){
 
 #' @rdname analyze-genealogy
 #' @export
-get_ancestors = function(orpha_code, output='codes_only', max_depth=NULL, df_classif=NULL)
+get_ancestors = function(orpha_codes, output=c('codes_only', 'edgelist', 'graph'), max_depth=NULL, df_classif=NULL)
 {
-  if(is.null(max_depth))
-    max_depth=-1
+  output = arg_match(output)
 
-  orpha_code = as.character(orpha_code)
+  if(!is.null(max_depth) && max_depth < 1)
+    stop(simpleError('`max_depth` argument must be NULL or greater than 0.'))
+
+  orpha_codes = as.character(orpha_codes)
   # Use specified classification or all of them if NULL was given
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
 
-  # Check if the given ORPHAcode is found in classification
-  if(!is_in_classif(orpha_code, df_classif))
-      return(NULL)
+  graph_classif = graph_from_data_frame(df_classif)
+
+  # Check if the codes belong to the given classification
+  belonging = sapply(orpha_codes, is_in_classif, df_classif)
+  if(any(!belonging)){
+    missing_codes = paste0(orpha_codes[!belonging], collapse=', ')
+    warning(sprintf('The following ORPHAcodes do not belong to the classification : %s.', missing_codes))
+    return(NULL)
+  }
 
   # Find all paths from the given ORPHAcode and extract elements
-  ancestors = df_classif %>%
-    graph_from_data_frame() %>%
-    all_simple_paths(orpha_code, mode='in', cutoff=max_depth) %>%
-    unlist() %>% names() %>% unique() %>% setdiff(orpha_code)
+  roots = find_roots(graph_classif)
+  ancest_paths = roots %>%
+    lapply(function(root){all_simple_paths(graph_classif, from=root, to=intersect(orpha_codes, names(V(graph_classif))))}) %>%
+    unlist(recursive=FALSE)
 
-  # Build edgelist
-  df_ancestors = df_classif %>%
-    filter(from %in% ancestors, to %in% c(ancestors, orpha_code))
+  if(!is.null(max_depth))
+    ancest_paths = ancest_paths%>%
+      lapply(\(x) rev(x)[2:min((max_depth+1), length(x))] %>% na.omit() %>% rev())
+
+  ancestors = ancest_paths %>% unlist() %>% names() %>% unique()
+
+  if(is.null(max_depth))
+      ancestors = setdiff(ancestors, orpha_codes)
+
+  # Build graph
+  graph_ancestors = induced_subgraph(graph_classif, unique(c(orpha_codes, ancestors)))
 
   # Return results in the specified format
   if(length(ancestors) == 0)
@@ -277,41 +290,62 @@ get_ancestors = function(orpha_code, output='codes_only', max_depth=NULL, df_cla
   else if(output=='codes_only')
     return(ancestors)
   else if(output=='edgelist')
-    return(df_ancestors)
+    return(as_data_frame(graph_ancestors, what = 'edges'))
   else if(output=='graph')
-    return(graph_from_data_frame(df_ancestors))
-  else{
-    warning('No valid output format was given. `output` value should be in `c("codes_only", "edgelist", "graph")`')
+    return(graph_ancestors)
+  else
     return(NULL)
-  }
 }
 
 
 #' @rdname analyze-genealogy
 #' @export
-get_descendants = function(orpha_code, output='codes_only', max_depth=NULL, df_classif=NULL){
-  orpha_code = as.character(orpha_code)
+get_descendants = function(orpha_codes, output=c('codes_only', 'edgelist', 'graph'), max_depth=NULL, df_classif=NULL){
+  output = arg_match(output)
+  orpha_codes = as.character(orpha_codes)
 
-  if(is.null(max_depth))
-    max_depth=-1
+  if(!is.null(max_depth) && max_depth < 1)
+    stop(simpleError('`max_depth` argument must be NULL or greater than 0.'))
 
   # Use specified classification or all of them if NULL was given
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
 
-  # Check if the code belongs to the given classification
-  if(!is_in_classif(orpha_code, df_classif))
+  # Check if the codes belong to the given classification
+  belonging = sapply(orpha_codes, is_in_classif, df_classif)
+  if(any(!belonging)){
+    missing_codes = paste0(orpha_codes[!belonging], collapse=', ')
+    warning(sprintf('The following ORPHAcodes do not belong to the classification : %s.', missing_codes))
     return(NULL)
+  }
+
+  graph_classif = graph_from_data_frame(df_classif)
+  df_remaining = graph_classif %>%
+    vertical_positions() %>%
+    filter(name %in% orpha_codes) %>%
+    arrange(y)
 
   # Find all paths from the given ORPHAcode and extract elements
-  descendants = df_classif %>%
-    graph_from_data_frame() %>%
-    all_simple_paths(orpha_code, mode='out', cutoff=max_depth) %>%
-    unlist() %>% names() %>% unique() %>% setdiff(orpha_code)
+  descendants = NULL
+  while(nrow(df_remaining)){
+    orpha_code = first(df_remaining$name)
+    desc_paths = all_simple_paths(graph_classif, from=orpha_code)
 
-  # Build edgelist
-  df_descendants = df_classif %>%
-      filter(to %in% descendants, from %in% c(orpha_code, descendants))
+    if(!is.null(max_depth))
+      desc_paths = desc_paths %>%
+        lapply(\(x) x[2:min((max_depth+1), length(x))] %>% na.omit())
+
+    new_descendants = desc_paths %>% unlist() %>% names() %>% unique()
+
+    if(is.null(max_depth))
+      new_descendants = setdiff(new_descendants, orpha_codes)
+
+    descendants = unique(c(descendants, new_descendants))
+    df_remaining = df_remaining %>% filter(!name %in% c(orpha_code, new_descendants))
+  }
+
+  # Build graph
+  graph_descendants = induced_subgraph(graph_classif, unique(c(orpha_codes, descendants)))
 
   # Return results in the specified format
   if(length(descendants) == 0)
@@ -319,20 +353,19 @@ get_descendants = function(orpha_code, output='codes_only', max_depth=NULL, df_c
   if(output == 'codes_only')
     return(descendants)
   else if(output == 'edgelist')
-    return(df_descendants)
+    return(as_data_frame(graph_descendants, what='edges'))
   else if(output == 'graph')
-    return(graph_from_data_frame(df_descendants))
-  else{
-    warning('No valid output format was given. `output` value should be in `c("codes_only", "edgelist", "graph")`')
+    return(graph_descendants)
+  else
     return(NULL)
-  }
 }
 
 
 #' @rdname analyze-genealogy
 #' @export
-get_siblings = function(orpha_code, output='codes_only', df_classif=NULL)
+get_siblings = function(orpha_code, output=c('codes_only', 'edgelist', 'graph'), df_classif=NULL)
 {
+  output = arg_match(output)
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
 
@@ -361,91 +394,21 @@ get_siblings = function(orpha_code, output='codes_only', df_classif=NULL)
 
 #' @rdname analyze-genealogy
 #' @export
-merge_branches = function(orpha_codes, output='codes_only', df_classif=NULL, direction=c('up', 'down', 'both')){
-  orpha_codes = na.omit(orpha_codes)
-
-  if('both' %in% direction)
-    direction = c('up', 'down')
-
-  if(is.null(df_classif))
-    df_classif = load_classifications() %>% bind_rows() %>% distinct()
-
-  graph_classif = graph_from_data_frame(df_classif)
-
-  df_y = graph_classif %>%
-    vertical_positions() %>%
-    filter(name %in% orpha_codes)
-
-  all_ancestors = NULL
-  all_descendants = NULL
-
-  # Search ancestors
-  if('up' %in% direction){
-    roots = find_roots(graph_classif)
-    all_ancestors = roots %>%
-      lapply(function(root){
-              selected_paths =
-                all_simple_paths(graph_classif, from=root,
-                                 to=intersect(orpha_codes, names(V(graph_classif))))
-              all_ancestors = selected_paths %>% unlist() %>% names() %>%
-                unique() %>% setdiff(orpha_codes)
-              }) %>%
-      unlist() %>% unique()
-  }
-
-  # Search descendants
-  if('down' %in% direction){
-    df_y_copy = df_y %>% arrange(y)
-    while(nrow(df_y_copy)){
-      orpha_code = first(df_y_copy$name)
-      descendants = all_simple_paths(graph_classif, from=orpha_code) %>%
-        unlist() %>% names() %>% unique() %>% setdiff(orpha_codes)
-      all_descendants = unique(c(all_descendants, descendants))
-      df_y_copy = df_y_copy %>% filter(!name %in% c(orpha_code, all_descendants))
-    }
-  }
-
-  # Use the found ORPHAcodes to induce the original graph
-  all_codes = unique(c(all_ancestors, orpha_codes, all_descendants))
-  v_index = which(names(V(graph_classif)) %in% all_codes)
-  graph_induced = induced_subgraph(graph_classif, vids = v_index)
-
-  # Return results in the expected format
-  if(length(V(graph_induced)) == 0)
-    return(NULL)
-  if(output == 'codes_only')
-    return(names(V(graph_induced)))
-  else if(output == 'edgelist')
-    return(as_data_frame(graph_induced))
-  else if(output == 'graph')
-    return(return(graph_induced))
-  else{
-    warning('No valid output format was given. `output` value should be in `c("codes_only", "edgelist", "graph")`')
-    return(NULL)
-  }
-}
-
-
-#' @rdname analyze-genealogy
-#' @export
-complete_family = function(orpha_codes, output='codes_only', df_classif=NULL, max_depth=1)
+complete_family = function(orpha_codes, output=c('codes_only', 'edgelist', 'graph'), df_classif=NULL, max_depth=1)
 {
+  output = arg_match(output)
+
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
 
   # Build graph from the found ancestors
   if(max_depth == 1)
     ancestors = df_classif %>% filter(to %in% orpha_codes) %>% pull(from) %>% unique()
-  else if(is.null(max_depth))
-    ancestors = merge_branches(orpha_codes, df_classif = df_classif, direction = 'up')
   else
-    ancestors = lapply(
-      orpha_codes,
-      \(x) get_ancestors(x, df_classif=df_classif, max_depth=max_depth)) %>%
-      unname() %>% unlist() %>% unique()
+    ancestors = get_ancestors(orpha_codes, df_classif = df_classif, max_depth=max_depth)
 
   new_orpha_codes = unique(c(orpha_codes, ancestors))
-  graph_family = merge_branches(new_orpha_codes, output='graph', df_classif=df_classif, direction='down')
+  graph_family = get_descendants(new_orpha_codes, output='graph', df_classif=df_classif)
 
   # Return results in the expected format
   if(is.null(graph_family))
@@ -456,10 +419,8 @@ complete_family = function(orpha_codes, output='codes_only', df_classif=NULL, ma
     return(as_data_frame(graph_family, what='edges'))
   else if(output == 'graph')
     return(graph_family)
-  else{
-    warning('No valid output format was given. `output` value should be in `c("codes_only", "edgelist", "graph")`')
+  else
     return(NULL)
-  }
 }
 
 
@@ -481,7 +442,10 @@ get_LCAs = function(orpha_codes, df_classif=NULL)
   if(is.null(df_classif))
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
 
-  graph = merge_branches(orpha_codes, output='graph', df_classif=df_classif) %>% add_superNode()
+  graph = merge_graphs(list(
+    get_ancestors(orpha_codes, output='graph', df_classif=df_classif),
+    get_descendants(orpha_codes, output='graph', df_classif=df_classif)
+  )) %>% add_superNode()
 
   # Find all paths going from the root to the codes in the given list
   all_paths = orpha_codes %>%

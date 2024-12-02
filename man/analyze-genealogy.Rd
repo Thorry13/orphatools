@@ -7,41 +7,45 @@
 \alias{get_ancestors}
 \alias{get_descendants}
 \alias{get_siblings}
-\alias{merge_branches}
 \alias{complete_family}
 \alias{get_LCAs}
 \title{Analyze ORPHA classifications}
 \usage{
-get_parents(orpha_code, output = "codes_only", df_classif = NULL)
+get_parents(
+  orpha_code,
+  output = c("codes_only", "edgelist", "graph"),
+  df_classif = NULL
+)
 
-get_children(orpha_code, output = "codes_only", df_classif = NULL)
+get_children(
+  orpha_code,
+  output = c("codes_only", "edgelist", "graph"),
+  df_classif = NULL
+)
 
 get_ancestors(
-  orpha_code,
-  output = "codes_only",
+  orpha_codes,
+  output = c("codes_only", "edgelist", "graph"),
   max_depth = NULL,
   df_classif = NULL
 )
 
 get_descendants(
-  orpha_code,
-  output = "codes_only",
+  orpha_codes,
+  output = c("codes_only", "edgelist", "graph"),
   max_depth = NULL,
   df_classif = NULL
 )
 
-get_siblings(orpha_code, output = "codes_only", df_classif = NULL)
-
-merge_branches(
-  orpha_codes,
-  output = "codes_only",
-  df_classif = NULL,
-  direction = c("up", "down", "both")
+get_siblings(
+  orpha_code,
+  output = c("codes_only", "edgelist", "graph"),
+  df_classif = NULL
 )
 
 complete_family(
   orpha_codes,
-  output = "codes_only",
+  output = c("codes_only", "edgelist", "graph"),
   df_classif = NULL,
   max_depth = 1
 )
@@ -55,11 +59,9 @@ get_LCAs(orpha_codes, df_classif = NULL)
 
 \item{df_classif}{The classification data to consider. If NULL, load the whole Orphanet classification.}
 
-\item{max_depth}{The maximum reached depth starting from the given ORPHAcode.}
-
 \item{orpha_codes}{A vector of ORPHAcodes used to perform operations.}
 
-\item{direction}{This gives the ancestors and/or descendants direction to complete the family. Should be in \code{c("up", "down", "both")}.}
+\item{max_depth}{The maximum reached depth starting from the given ORPHAcode.}
 }
 \value{
 Results are returned in the format specified in \code{output} argument :
@@ -81,7 +83,8 @@ There two classes of functions:
 }
 \item Functions applied to a set of ORPHAcodes:
 \itemize{
-\item \code{merge_branches}
+\item \code{get_ancestors}
+\item \code{get_descendants}
 \item \code{complete_family}
 \item \code{get_LCAs}
 }
@@ -101,13 +104,9 @@ orpha_code = '303'
 
 # ---
 # Ancestors
-
-# Get ancestors ORPHAcodes only
-ancestors_codes = get_ancestors(orpha_code)
-
-# Change output format
-df_ancestors = get_ancestors(orpha_code, output='edgelist')
-graph_ancestors = get_ancestors(orpha_code, output='graph')
+ancestors = get_ancestors(orpha_code)
+ancestors_edges = get_ancestors(orpha_code, output='edgelist')
+ancestors_graph = get_ancestors(orpha_code, output='graph')
 
 # Get parents only
 parents = get_ancestors(orpha_code, max_depth=1)
@@ -122,49 +121,33 @@ ancestors = get_ancestors(orpha_code, df_classif=classif2)
 
 # ---
 # Descendants
-
-# Get desendants ORPHAcodes only
 descendants_codes = get_descendants(orpha_code)
-
-# Change output format
-df_descendants = get_descendants(orpha_code, output='edgelist')
-graph_descendants = get_descendants(orpha_code, output='graph')
+decendants_edges = get_descendants(orpha_code, output='edgelist')
+descendants_graph = get_descendants(orpha_code, output='graph')
 
 # Get children only
-df_children = get_descendants(orpha_code, max_depth=1)
-df_childen = get_children(orpha_code)
+children = get_descendants(orpha_code, max_depth=1)
+children = get_children(orpha_code)
 
 # ---
 # Siblings
-
 siblings = get_siblings(orpha_code)
-df_siblings = get_siblings(orpha_code, output='edgelist')
-graph_siblings = get_siblings(orpha_code, output='graph')
+siblings_edges = get_siblings(orpha_code, output='edgelist')
+siblings_graph = get_siblings(orpha_code, output='graph')
 
 # ---
 # Lowest common ancestors
-
 lcas = get_LCAs(orpha_codes)
 
 classif = all_classif[['ORPHAclassification_187_rare_skin_diseases_fr']]
 lcas = get_LCAs(orpha_codes, df_classif = classif)
 
 # ---
-# Merge branches
-
-family_codes = merge_branches(orpha_codes)
-family_codes = merge_branches(orpha_codes, df_classif = all_classif[[1]])
-family_codes = merge_branches(orpha_codes, direction='up')
-family_codes = merge_branches(orpha_codes, direction='down')
-df_family = merge_branches(orpha_codes, output='edgelist')
-graph_family = merge_branches(orpha_codes, output='graph')
-
-# ---
 # Complete family
 family_codes = complete_family(orpha_codes)
 family_codes = complete_family(orpha_codes, df_classif=all_classif[[1]])
-family_codes = complete_family(orpha_codes, max_depth=0)
-df_family = complete_family(orpha_codes, output = 'edgelist')
-graph_family = complete_family(orpha_codes, output='graph')
+family_codes = complete_family(orpha_codes, max_depth=2)
+family_edges = complete_family(orpha_codes, output = 'edgelist')
+family_graph = complete_family(orpha_codes, output='graph')
 
 }
