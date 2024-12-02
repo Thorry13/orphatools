@@ -80,26 +80,32 @@ get_type(orpha_code)
 ### Analyze genealogy
 `orphatools` and `igraph` provide usefool functions to analyze the Orphanet classification system.
 
-#### Ancestors, descendants, siblings
-```{r gen-basics}
+#### Parents, children, siblings
+```{r direct_relationships}
 orpha_code = 303
 get_parents(orpha_code)
 get_children(orpha_code)
-get_ancestors(orpha_code)
-get_descendants(orpha_code)
 get_siblings(orpha_code)
 ```
-For all of these functions, it is sometimes more useful to get directly an edgelist or an equivalent graph, 
-using the `output` argument:
-```{r}
-df_parents = get_parents(orpha_code, output='edgelist')
-graph_descendants = get_descendants(orpha_code, output='graph')
+
+
+#### Ancestors, descendants
+```{r further_relationships_1}
+orpha_code = 303
+get_ancestors(orpha_code)
+get_descendants(orpha_code)
 ```
 
-#### Analyze relationships on multiple codes
-When several ORPHAcodes are submitted, you can either analyze what they have in common or 
-merge branches from their own tree to get an extended classification.
+These functions also work with a vector of ORPHAcodes as an input. 
+In this case, the returned value corresponds to the union of ancestors/descendants.
 
+```{r further_relationships_2}
+orpha_codes = c(303, 304)
+get_ancestors(orpha_codes)
+get_descendants(orpha_codes)
+```
+
+#### Lowest common ancestor (LCA)
 The Lowest Common Ancestor (LCA) is the closest ancestor that the given ORPHAcodes have in common.
 It is possible to have several LCAs, when they belong to independent branches.
 ```{r lca}
@@ -108,35 +114,27 @@ get_LCAs(orpha_codes)
 get_LCAs(orpha_codes, df_classif=classif_data[['ORPHAclassification_187_rare_skin_diseases_fr_2023']])
 ```
 
-If you analyze a set of ORPHAcodes, you may want to quickly build a graph to be able to visualize
-relationships between them, or check that your list is complete. `merge_branches` and `complete_family` 
-were implemented in this perspective. 
 
-`merge_branches` just finds ancestors and/or descendants from all given ORPHAcodes and connects the whole list.
-```{r merge_branches, results='hold'}
-orpha_codes = c('303', '305', '595356')
-graph_family = merge_branches(orpha_codes, output = 'graph') # both
-graph_family = merge_branches(orpha_codes, output = 'graph', direction = c('up', 'down')) # both
-graph_family = merge_branches(orpha_codes, output = 'graph', direction = 'both') # both
-plot(graph_family, layout=layout_tree)
+#### Complete family
+`complete_family` is equivalent to find ancestors to a limited level (e.g. grand-parents for max_depth=2), and return the whole set of branches induced, including then parents, siblings, cousins, ...
 
-graph_family = merge_branches(orpha_codes, output = 'graph', direction='up')
-plot(graph_family, layout=layout_tree)
-
-graph_family = merge_branches(orpha_codes, output = 'graph', direction='down')
-plot(graph_family, layout=layout_tree)
-```
-
-Instead `complete_family` first needs to know which level to reach (`max_depth` argument)
-before finding all descendants of the found root ancestors.
 ```{r complete_family, results='hold'}
 orpha_codes = c('79400', '79401', '79410')
-graph_family = complete_family(orpha_codes, output = 'graph', max_depth=0)
-graph_family = complete_family(orpha_codes, output = 'graph', max_depth=1)
+graph_family = complete_family(orpha_codes, max_depth=1)
+graph_family = complete_family(orpha_codes, max_depth=2)
 ```
-`complete_family` with `max_depth=0` is equivalent to `merge_branches` with `direction='down'`.
 
 See the [Visualization] section to plot and color your graph.
+
+
+#### Alternate output
+For all of these functions, it is sometimes more useful to get an equivalent edgelist or graph, 
+using the `output` argument:
+```{r alternate_output}
+df_parents = get_parents(orpha_code, output='edgelist')
+graph_descendants = get_descendants(orpha_code, output='graph')
+```
+
 
 ### Find upper classification levels
 ```{r rolling_up, results='hold'}
@@ -157,8 +155,8 @@ If you need to apply the function on a wide set of ORPHAcodes, you will probably
 
 See the [Aggregation] section for more details.
 
-### Specify classification
 
+### Specify classification
 For all the functions described above, it is possible to analyze a specific classification only through the `df_classif` argument.
 You might want to be restricted to an edgelist from one of the functions above, or directly take one of the 34 Orphanet classifications,
 which are stored in the list returned by `load_classifications`.
@@ -208,7 +206,7 @@ with `color_codes`, while `color_classification_level` .
 
 ```{r color_plot}
 init_codes = c(303, 305)
-graph = merge_branches(init_codes, direction='down', output='graph') %>%
+graph = get_descendants(init_codes, output='graph') %>%
   color_codes(init_codes) %>%
   color_class_levels()
 plot(graph)
@@ -237,7 +235,8 @@ In many cases, your data operations would lead you to something like :
 
 ```{r counting1}
 df_patients = data.frame(patient_id = c(1,1,2,3,4,5,6),
-                         code = c('303', '158673', '595356', '305', '79406', '79406', '595356'))
+                         code = c('303', '158673', '595356', '305', '79406', '79406', '595356'),
+                         status = factor(c('ongoing', 'confirmed', 'ongoing', 'ongoing', 'confirmed', 'ongoing', 'ongoing'), levels=c('ongoing', 'confirmed'), ordered=TRUE))
 kable(df_patients, 'html')
 ```
 How many patients can be gathered for each ORPHAcode ?
@@ -299,6 +298,16 @@ df_counts = df_patients %>%
   filter(level == 'Disorder') %>%
   as.data.frame()
 kable(df_counts, 'html')
+```
+
+```{r group_other_vars}
+df_nomenclature = load_nomenclature() %>% select(orpha_code, level)
+df_status = df_patients %>%
+  orpha_df(orpha_code_col = 'code') %>%
+  group_by(patient_id, code) %>%
+  summarize(status = max(status)) %>%
+  left_join(df_nomenclature, by=c('code'='orpha_code'))
+kable(df_status, 'html')
 ```
 
 Finally some desired ORPHAcode might still be missing in the results.
