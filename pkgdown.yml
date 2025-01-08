@@ -3,4 +3,7 @@ pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   orphatools-vignette: orphatools-vignette.html
-last_built: 2025-01-08T17:16Z
+last_built: 2025-01-08T17:51Z
+urls:
+  reference: https://thorry13.github.io/orphatools/reference
+  article: https://thorry13.github.io/orphatools/articles
