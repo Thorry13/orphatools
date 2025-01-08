@@ -28,7 +28,7 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-License: GPL (>= 3) + LICENSE file
+License: GPL (>= 3) + file LICENSE
 Depends: 
     R (>= 2.10)
 Config/testthat/edition: 3

@@ -8,3 +8,4 @@ jss-article
 inflate*
 orphatools-vignette.pdf
 
+^LICENSE\.md$
