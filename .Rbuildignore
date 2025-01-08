@@ -9,3 +9,8 @@ inflate*
 orphatools-vignette.pdf
 
 ^LICENSE\.md$
+^\.github$
+^codecov\.yml$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

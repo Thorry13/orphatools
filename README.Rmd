@@ -16,6 +16,8 @@ knitr::opts_chunk$set(
 # orphatools
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/Thorry13/orphatools/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Thorry13/orphatools/actions/workflows/R-CMD-check.yaml)
+[![Codecov test coverage](https://codecov.io/gh/Thorry13/orphatools/graph/badge.svg)](https://app.codecov.io/gh/Thorry13/orphatools)
 <!-- badges: end -->
 
 The goal of orphatools is to ...
