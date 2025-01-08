@@ -1,0 +1,24 @@
+id;id_family;label
+1;status;Actif
+129;status;Actif
+513;status;Actif
+8449;status;Inactif : Déprécié
+8208;status;Inactif : Obsolète
+9216;status;Inactif : Obsolète
+8225;status;Inactif : Non rare en Europe
+36561;type;Catégorie
+21436;type;Groupe clinique
+21394;type;Maladie
+21422;type;Syndrome clinique
+21401;type;Syndrome de malformation
+21408;type;Anomalie biologique
+21415;type;Anomalie morphologique
+21429;type;Situation clinique particulière dans une maladie ou un syndrome
+21443;type;Sous-type éthiologique
+21450;type;Sous-type clinique
+21457;type;Sous-type histopathologique
+36540;level;Groupe
+36547;level;Maladie
+36554;level;Sous-type
+21471;redir_type;Déplacé vers
+27341;redir_type;Associé à
