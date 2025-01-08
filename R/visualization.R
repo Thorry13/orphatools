@@ -395,7 +395,7 @@ apply_orpha_indent = function(df, df_classif=NULL, indented_cols=NULL, prefix='i
   # Prune classification
   # df_classif = df_classif %>% filter(from %in% df[[code_col]])
   df_classif = graph_from_data_frame(df_classif) %>%
-    reduce_graph(unique(df[[code_col]])) %>%
+    minimize_graph(unique(df[[code_col]])) %>%
     as_data_frame()
 
   # Calculate index for each ORPHAcode
@@ -466,17 +466,17 @@ path2edges = function(path){
 }
 
 
-#' Reduce a graph
+#' Minmize a graph
 #'
 #' @description
 #' Similar to an induced subgraph, but creates shortcut edges between vertices
 #' that were primarily connected.
 #'
-#' @param graph The graph to reduce
+#' @param graph The graph to minmize
 #' @param vs The vertices to keep
 #'
-#' @return The reduced graph, which is different in general from an induced
-#' subgraph whose all edges must exist in the original graph.
+#' @return The minimized graph, which is different in general from an induced
+#' subgraph because of edges management.
 #'
 #' @import magrittr
 #' @importFrom igraph graph_from_data_frame all_simple_paths
@@ -495,10 +495,10 @@ path2edges = function(path){
 #' G_induced = igraph::induced_subgraph(G, vs)
 #' plot(G_induced, layout=layout_tree)
 #'
-#' G_reduced = reduce_graph(G, vs)
+#' G_reduced = minimize_graph(G, vs)
 #' plot(G_reduced, layout=layout_tree)
 #'
-reduce_graph = function(graph, vs){
+minimize_graph = function(graph, vs){
   roots = find_roots(graph)
   leaves = find_leaves(graph)
   all_paths = lapply(roots, \(root) all_simple_paths(graph, from = root, to=leaves)) %>%
@@ -518,5 +518,9 @@ reduce_graph = function(graph, vs){
     filter(!to_rem)
 
   new_graph = graph_from_data_frame(df_edges)
+
   return(new_graph)
 }
+
+
+

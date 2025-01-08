@@ -402,7 +402,9 @@ complete_family = function(orpha_codes, output=c('codes_only', 'edgelist', 'grap
     df_classif = load_classifications() %>% bind_rows() %>% distinct()
 
   # Build graph from the found ancestors
-  if(max_depth == 1)
+  if(max_depth == 0)
+    ancestors=NULL
+  else if(max_depth == 1)
     ancestors = df_classif %>% filter(to %in% orpha_codes) %>% pull(from) %>% unique()
   else
     ancestors = get_ancestors(orpha_codes, df_classif = df_classif, max_depth=max_depth)
@@ -567,6 +569,27 @@ get_lowest_groups = function(orpha_code, df_classif=NULL)
     find_leaves()
 
   return(lowest_groups)
+}
+
+#' Extract a graph from a set of ORPHAcodes
+#'
+#' @description
+#' The extracted graph contains all the ORPHAcodes specified in the `vs` argument.
+#' It may include other ORPHAcodes inside, but all the roots and leaves are part of `vs`.
+#'
+#' @param vs A set of ORPHAcodes used to extract the graph.
+#' @param df_classif The classification to consider. If NULL, loads the whole Orphanet classification.
+#'
+#' @return
+#' The extracted graph as an _igraph_ object.
+#'
+#' @export
+in_between_graph = function(vs, df_classif=NULL){
+  Ga = get_ancestors(vs, output='graph', df_classif=df_classif)
+  Gd = get_descendants(vs, output='graph', df_classif=df_classif)
+  G = igraph::intersection(Ga, Gd, keep.all.vertices=FALSE)
+
+  return(G)
 }
 
 
