@@ -33,5 +33,5 @@ Depends:
     R (>= 2.10)
 Config/testthat/edition: 3
 LazyData: true
-URL: https://github.com/Thorry13/orphatools
+URL: https://github.com/Thorry13/orphatools, https://thorry13.github.io/orphatools/
 BugReports: https://github.com/Thorry13/orphatools/issues
