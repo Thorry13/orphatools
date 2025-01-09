@@ -108,7 +108,7 @@ is_in_classif = function(orpha_code, df_classif)
 #' Results are returned in the format specified in `output` argument :
 #' `'codes_only'`, `'edgelist'`, `'graph'`.
 #'
-#' @import dplyr
+#' @importFrom dplyr filter pull bind_rows distinct arrange first
 #' @importFrom igraph graph_from_data_frame as_data_frame all_simple_paths induced_subgraph V
 #' @importFrom stats na.omit
 #' @importFrom purrr keep is_empty
@@ -497,7 +497,7 @@ get_LCAs = function(orpha_codes, df_classif=NULL)
 #' `get_lowest_groups` returns the closest groups from the given ORPHAcode,
 #' or the ORPHAcode itself if it is a group of disorders already.
 #'
-#' @import dplyr
+#' @importFrom dplyr bind_rows distinct filter pull left_join semi_join
 #' @importFrom igraph graph_from_data_frame
 #' @importFrom purrr keep
 #'
@@ -580,6 +580,8 @@ get_lowest_groups = function(orpha_code, df_classif=NULL)
 #' @param vs A set of ORPHAcodes used to extract the graph.
 #' @param df_classif The classification to consider. If NULL, loads the whole Orphanet classification.
 #'
+#' @importFrom igraph intersection
+#'
 #' @return
 #' The extracted graph as an _igraph_ object.
 #'
@@ -587,7 +589,7 @@ get_lowest_groups = function(orpha_code, df_classif=NULL)
 in_between_graph = function(vs, df_classif=NULL){
   Ga = get_ancestors(vs, output='graph', df_classif=df_classif)
   Gd = get_descendants(vs, output='graph', df_classif=df_classif)
-  G = igraph::intersection(Ga, Gd, keep.all.vertices=FALSE)
+  G = intersection(Ga, Gd, keep.all.vertices=FALSE)
 
   return(G)
 }
@@ -603,7 +605,6 @@ in_between_graph = function(vs, df_classif=NULL){
 #' @param graphs_list The graphs to merge.
 #'
 #' @return The merged graph
-#' @import magrittr
 #' @importFrom igraph as_data_frame graph_from_data_frame
 #' @importFrom dplyr bind_rows distinct group_by summarize
 #'
@@ -644,7 +645,6 @@ merge_graphs = function(graphs_list)
 #' @param graph The graph to which the extra node should be added.
 #'
 #' @return The new graph with the added node
-#' @import magrittr
 #' @importFrom igraph add_vertices add_edges
 add_superNode = function(graph)
 {
@@ -673,7 +673,6 @@ add_superNode = function(graph)
 #'
 #' @param graph An igraph object.
 #'
-#' @import magrittr
 #' @importFrom igraph degree
 #'
 #' @return The extrem nodes of a graph.

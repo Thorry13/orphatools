@@ -303,9 +303,8 @@ horizontal_sizes = function(graph, df_y, root_node=NULL)
 #' @param graph The graph to visualize.
 #' @param layout_tree If `TRUE`, use [layout_tree()] to set initial nodes position.
 #'
-#' @import magrittr
 #' @import visNetwork
-#' @importFrom dplyr mutate rename
+#' @importFrom dplyr mutate rename coalesce
 #' @importFrom igraph as_data_frame
 #' @export
 #'
@@ -365,7 +364,7 @@ interactive_plot = function(graph, layout_tree = FALSE)
 #' @param prefix The prefix of the indented columns. Default is `"indent"`.
 #'
 #' @import magrittr
-#' @importFrom dplyr mutate
+#' @importFrom dplyr mutate rename_with
 #' @importFrom tidyr replace_na
 #' @importFrom stringr str_count str_replace
 #' @importFrom stats setNames
@@ -480,7 +479,7 @@ path2edges = function(path){
 #'
 #' @import magrittr
 #' @importFrom igraph graph_from_data_frame all_simple_paths
-#' @importFrom dplyr bind_rows distinct
+#' @importFrom dplyr bind_rows distinct rowwise
 #'
 #' @export
 #'

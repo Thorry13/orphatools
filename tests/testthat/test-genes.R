@@ -84,7 +84,7 @@ test_that("specification with a list-column for genes", {
     patient_id=c('A', 'A', 'B', 'C', 'D'),
     initial_orpha_code = c("65753", "65753", "903", "65753", "65753"), # CMT1 and von Willebrand
     symbol = list(c("MPZ", "VWF"), c("LITAF", "VWF"), "VWF", "LITAF", c("MPZ", "VWF")))
-  df2_old = df2 %>% mutate(i = row_number()) %>% unnest(symbol)
+  df2_old = df2 %>% mutate(i = dplyr::row_number()) %>% unnest(symbol)
   df2_old_spec = df2_old %>% mutate(assigned_orpha_code = specify_code(initial_orpha_code, genes=symbol, mode='symbol', .by=patient_id)) %>% tidyr::chop(symbol)
 
   # Incorrect

@@ -92,7 +92,7 @@ load_genes_synonyms = function(){
 #' Set it to NULL or a constant value to apply the full set of `genes` to each element of `orpha_codes`.
 #' A warning will be raised if any of the considered sets contains more than 10 elements.
 #'
-#' @import dplyr
+#' @importFrom dplyr tibble mutate pull distinct n_distinct group_by ungroup reframe left_join sym
 #' @importFrom tidyr unnest
 #' @importFrom stringr str_detect
 #'

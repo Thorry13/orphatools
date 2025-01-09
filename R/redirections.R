@@ -54,6 +54,8 @@ load_raw_redirections = function(){
 #' @return The redirected ORPHAcodes. If no redirection is found, ORPHAcodes remain the same as given,
 #' so ORPHAcodes may remain inactive after redirection.
 #'
+#' @importFrom dplyr coalesce filter left_join pull
+#'
 #' @export
 #' @seealso [load_redirections()], [load_raw_redirections()]
 #' @examples

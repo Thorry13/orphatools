@@ -13,6 +13,7 @@
 #'
 #' All options can be set manually via the built-in [options()] function.
 #'
+#' @importFrom dplyr case_when
 #' @importFrom stats setNames
 #' @export
 #' @seealso [add_dictionary()], [add_nomenclature_pack()], [add_associated_genes()]

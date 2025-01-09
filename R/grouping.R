@@ -16,6 +16,9 @@
 #'
 #' @return An `orpha_df` instantiation. Any data.frame extension will be kept.
 #' Former attributes are erased if `orpha_df` is called multiple times.
+#'
+#' @importFrom dplyr count
+#'
 #' @export
 #'
 #' @examples
@@ -123,16 +126,17 @@ dplyr_col_modify.orpha_df = function(data, cols){
 #' @inheritParams dplyr::group_by
 #'
 #' @export
-#' @import dplyr
+#' @importFrom dplyr group_vars bind_rows distinct group_by ungroup summarize mutate relocate select rename dplyr_col_modify dplyr_reconstruct last if_else enquos dplyr_row_slice
 #' @importFrom tidyr complete unnest
+#'
 #' @examples
 #' library(dplyr)
 #'
 #' # Build patients data.frame
 #' df_patients = data.frame(
-#' patient_id = c(1,2,3,4,5,6),
-#' group = c('A,'A','A','B','B','B')
-#' code = c('158673', '595356', '305', '79406', '79406', '595356'))
+#'   patient_id = c(1,2,3,4,5,6),
+#'   group = c('A','A','A','B','B','B'),
+#'   code = c('158673', '595356', '305', '79406', '79406', '595356'))
 #'
 #' df_counts = df_patients %>% group_by(code)
 #' attr(df_counts, 'groups')
@@ -266,8 +270,8 @@ dplyr_col_modify.grouped_orpha_df = function(data, cols){
 
 
 #' @export
-ungroup.grouped_orpha_df = function(.data, ...){
-  attrs = attributes(.data)
+ungroup.grouped_orpha_df = function(x, ...){
+  attrs = attributes(x)
   ungrouped_df = NextMethod()
   cls = class(ungrouped_df)
   attributes(ungrouped_df) = attrs[names(attrs) != 'groups']
