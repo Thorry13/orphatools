@@ -17,7 +17,7 @@ test_that("adds a new pack, existing pack and sets default correctly", {
     file.remove(versions_path)
   }
   else
-    df_version_backup = NULL
+    df_versions_backup = NULL
 
   df_versions = get_pack_versions()
   expect_equal(dim(df_versions), c(1,3))
